@@ -19,3 +19,24 @@ target_sources(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/inc
 )
+
+set(APP_NAME threadxen)
+set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)
+add_executable(${APP_NAME})
+target_link_libraries(${APP_NAME} ${PROJECT_NAME})
+target_link_options(${APP_NAME} PRIVATE -T ${LDS})
+target_sources(${APP_NAME} PRIVATE
+    # {{BEGIN_TARGET_SOURCES}}
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/main.c
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/gicv3_gicd.c
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/gicv3_gicr.c
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/sp804_timer.c
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/timer_interrupts.c
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/mp_mutexes.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/startup.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/v8_aarch64.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/v8_utils.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/vectors.s
+    # {{END_TARGET_SOURCES}}
+)
+
