@@ -66,11 +66,11 @@ start64:
     ldr x1, =el1_vectors
     msr VBAR_EL1, x1
 
-    ldr x1, =el2_vectors
-    msr VBAR_EL2, x1
+    //ldr x1, =el2_vectors
+    //msr VBAR_EL2, x1
 
-    ldr x1, =el3_vectors
-    msr VBAR_EL3, x1
+    //ldr x1, =el3_vectors
+    //msr VBAR_EL3, x1
 
 
     // GIC-500 comes out of reset in GICv2 compatibility mode - first set
@@ -680,14 +680,14 @@ nol2setup:
     bl  memset
 
     // Set up the standard file handles
-    // bl  initialise_monitor_handles
+    //bl  initialise_monitor_handles
 
     // Set up _fini and fini_array to be called at exit
-    // ldr x0, =__libc_fini_array
-    // bl  atexit
+    //ldr x0, =__libc_fini_array
+    //bl  atexit
 
     // Call preinit_array, _init and init_array
-    // bl  __libc_init_array
+    //bl  __libc_init_array
 
     // Set argc = 1, argv[0] = "" and then call main
     .pushsection .data
