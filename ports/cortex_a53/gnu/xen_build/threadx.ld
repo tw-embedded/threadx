@@ -1,37 +1,12 @@
 /* Linker script to place sections and symbol values.
  * It references following symbols, which must be defined in code:
- *   start64 : Entry point
- * 
- * It defines following symbols, which code can use without definition:
- *   __cs3_peripherals
- *   __code_start
- *   __exidx_start
- *   __exidx_end
- *   __data_start
- *   __preinit_array_start
- *   __preinit_array_end
- *   __init_array_start
- *   __init_array_end
- *   __fini_array_start
- *   __fini_array_end
- *   __bss_start__
- *   __bss_end__
- *   __end__
- *   __stack
- *   __el3_stack
- *   __ttb0_l1
- *   __ttb0_l2_ram
- *   __ttb0_l2_private
- *   __ttb0_l2_periph
- *   __top_of_ram
  */
 
-ENTRY(start64)
+ENTRY(_threadxen_start)
 
 SECTIONS
 {
-    /*
-     * CS3 Peripherals is a 64MB region from 0x1c000000
+    /* CS3 Peripherals is a 64MB region from 0x1c000000
      * that includes the following:
      * System Registers             at 0x1C010000
      * UART0 (PL011)                at 0x1C090000
@@ -46,7 +21,7 @@ SECTIONS
     /*
      * GICv3 distributor
      */
-    .gicd 0x2f000000 (NOLOAD):
+    .gicd 0x3001000 (NOLOAD):
     {
         *(.gicd)
     }
@@ -55,12 +30,18 @@ SECTIONS
      * GICv3 redistributors
      * 128KB for each redistributor in the system
      */
-    .gicr 0x2f100000 (NOLOAD):
+    .gicr 0x10020000 (NOLOAD):
     {
         *(.gicr)
     }
 
-    .vectors 0x80000000:
+    . = 0x40000000; /* THREADXEN_VA */
+    _threadxen_start = .;
+    .pecoff : {
+        KEEP(*(.pecoff))
+    }
+
+    .vectors 0x40001000:
     {
         __code_start = .;
         KEEP(*(StartUp))
@@ -242,4 +223,21 @@ SECTIONS
      * the top of memory - don't place any RAM regions after it
      */
     __top_of_ram = .;
+
+    /DISCARD/ : {
+       *(.text.exit)
+       *(.exit.text)
+       *(.exit.data)
+       *(.exitcall.exit)
+       *(.discard)
+       *(.discard.*)
+       *(.eh_frame)
+       *(.dtors)
+       *(.dtors.*)
+       *(.fini_array)
+       *(.fini_array.*)
+       *(.comment)
+       *(.comment.*)
+       *(.note.*)
+    }
 }

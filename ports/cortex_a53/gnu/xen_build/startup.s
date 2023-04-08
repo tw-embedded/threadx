@@ -66,11 +66,11 @@ start64:
     ldr x1, =el1_vectors
     msr VBAR_EL1, x1
 
-    //ldr x1, =el2_vectors
-    //msr VBAR_EL2, x1
+    ldr x1, =el2_vectors
+    msr VBAR_EL2, x1
 
-    //ldr x1, =el3_vectors
-    //msr VBAR_EL3, x1
+    ldr x1, =el3_vectors
+    msr VBAR_EL3, x1
 
 
     // GIC-500 comes out of reset in GICv2 compatibility mode - first set
@@ -330,7 +330,7 @@ el1_entry_aarch64:
     // (unless suppressed with the DBGL1RSTDISABLE or L2RSTDISABLE pins).
     // It is therefore not necessary for software to invalidate the caches 
     // on startup, however, this is done here in case of a warm reset.
-    bl  InvalidateUDCaches
+    // bl  InvalidateUDCaches // alix: when xen boot domu, cache was invalidated
     tlbi VMALLE1
 
 

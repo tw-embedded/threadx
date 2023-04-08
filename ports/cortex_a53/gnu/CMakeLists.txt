@@ -20,7 +20,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/inc
 )
 
-set(APP_NAME threadxen)
+set(EXE_NAME threadxen)
+set(APP_NAME ${EXE_NAME}.elf)
 set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)
 add_executable(${APP_NAME})
 target_link_libraries(${APP_NAME} ${PROJECT_NAME})
@@ -37,6 +38,12 @@ target_sources(${APP_NAME} PRIVATE
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/v8_aarch64.s
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/v8_utils.s
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/vectors.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/pecoff.s
     # {{END_TARGET_SOURCES}}
+)
+add_custom_command(
+    TARGET ${APP_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} ${APP_NAME} -O binary ${EXE_NAME}
 )
 
