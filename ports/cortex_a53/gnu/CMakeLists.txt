@@ -24,6 +24,8 @@ set(EXE_NAME threadxen)
 set(APP_NAME ${EXE_NAME}.elf)
 set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)
 add_executable(${APP_NAME})
+message(STATUS "find libc from ${CMAKE_SOURCE_DIR}")
+target_link_libraries(${APP_NAME} ${CMAKE_SOURCE_DIR}/../libc/build/libc.a)
 target_link_libraries(${APP_NAME} ${PROJECT_NAME})
 target_link_options(${APP_NAME} PRIVATE -T ${LDS})
 target_sources(${APP_NAME} PRIVATE

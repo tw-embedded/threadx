@@ -51,9 +51,6 @@
     .global __el3_stack
     .global __cs3_peripherals
 
-
-
-
 // ------------------------------------------------------------
 
     .global start64

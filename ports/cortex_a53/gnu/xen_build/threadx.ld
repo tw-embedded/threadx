@@ -1,6 +1,4 @@
-/* Linker script to place sections and symbol values.
- * It references following symbols, which must be defined in code:
- */
+/* Linker script to place sections and symbol values. */
 
 ENTRY(_threadxen_start)
 
