@@ -41,6 +41,7 @@ target_sources(${APP_NAME} PRIVATE
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/v8_utils.s
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/vectors.s
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/pecoff.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/hypercall.s
     # {{END_TARGET_SOURCES}}
 )
 add_custom_command(

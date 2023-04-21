@@ -70,11 +70,14 @@ UCHAR   event_buffer[65536];
 
 #endif
 
+#define CONSOLEIO_write 0
 
 /* Define main entry point.  */
 
 int main(void)
 {
+    HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadx\n");
+    while (1) ;
 
     /* Initialize timer.  */
     init_timer();
