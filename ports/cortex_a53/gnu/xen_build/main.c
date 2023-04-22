@@ -77,11 +77,10 @@ UCHAR   event_buffer[65536];
 int main(void)
 {
     HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadx\n");
-    while (1) ;
 
     /* Initialize timer.  */
     init_timer();
-
+while (1);
     /* Enter ThreadX.  */
     tx_kernel_enter();
 

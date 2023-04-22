@@ -28,7 +28,7 @@ SECTIONS
      * GICv3 redistributors
      * 128KB for each redistributor in the system
      */
-    .gicr 0x10020000 (NOLOAD):
+    .gicr 0x00000000400fa000 (NOLOAD):
     {
         *(.gicr)
     }
