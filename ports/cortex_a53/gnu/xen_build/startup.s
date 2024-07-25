@@ -300,6 +300,11 @@ drop_to_el1:
     .type el1_entry_aarch64, "function"
 el1_entry_aarch64:
 
+    mrs x1, CurrentEL
+
+    ldr x1, =el1_vectors
+    msr VBAR_EL1, x1
+
     //
     // Now we're in EL1, setup the application stack
     // the scatter file allocates 2^14 bytes per app stack

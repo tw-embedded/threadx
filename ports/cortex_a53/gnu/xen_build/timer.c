@@ -14,15 +14,15 @@
 
 void   _tx_timer_interrupt(void);
 
-
+#define CONSOLEIO_write 0
 
 void irqHandler(void)
 {
   unsigned int ID;
 
   ID = getICC_IAR1(); // readIntAck();
-
-  // Check for reserved IDs
+    HYPERVISOR_console_io(CONSOLEIO_write, 8, "time irq\n");
+    while(1);  // Check for reserved IDs
   if ((1020 <= ID) && (ID <= 1023))
   {
       //printf("irqHandler() - Reserved INTID %d\n\n", ID);
@@ -185,40 +185,6 @@ static void set_timer_period(uint64_t period)
     }
 }
 
-// Initialize Timer 0 and Interrupt Controller
-void init_timer(void)
-{
-    uint64_t reg;
-
-    // disable timer
-    reg = ArmReadCntvCtl();
-    reg |= ARM_ARCH_TIMER_IMASK;
-    reg &= ~ARM_ARCH_TIMER_ENABLE;
-    ArmWriteCntvCtl(reg);
-
-    // install interrupt handler
-
-    // setup timer
-    set_timer_period(100000);
-
-    // enable timer
-    reg = ARM_ARCH_TIMER_ENABLE;
-    ArmWriteCntvCtl(reg);
-
-    // Enable interrupts
-    __asm("MSR DAIFClr, #0xF");
-    setICC_IGRPEN1_EL1(igrpEnable);
-
-    // Route INTID 27 to 0.0.0.0 (this core)
-    SetSPIRoute(27, 0, gicdirouter_ModeSpecific);
-    // Set INTID 27 to priority to 0
-    SetSPIPriority(27, 0);
-    // Set INTID 27 as level-sensitive
-    ConfigureSPI(27, gicdicfgr_Edge);
-    // Enable INTID 27
-    EnableSPI(27);
-}
-
 static void reenable_timer(void)
 {
     uint64_t TimerCtrlReg;
@@ -235,11 +201,12 @@ static void reenable_timer(void)
     TimerCtrlReg &= ~ARM_ARCH_TIMER_IMASK;
     ArmWriteCntvCtl (TimerCtrlReg);
 }
-
 void irq()
 {
     uint64_t count, compare;
-
+    
+    HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadi\n");
+    
     // eoi
 
     // check interrupt source
@@ -253,5 +220,122 @@ void irq()
         reenable_timer();
         __asm__ __volatile__("isb\n\t");
     }
+}
+
+// Virtual Timer registers
+#define CNTV_CTL_EL0    0x000
+#define CNTV_TVAL_EL0   0x008
+#define CNTV_CVAL_EL0   0x010
+#define CNTVCT_EL0      0x018
+
+// System register access macros
+#define read_sysreg(reg) ({ uint64_t val; asm volatile("mrs %0, " #reg : "=r"(val)); val; })
+#define write_sysreg(reg, val) ({ asm volatile("msr " #reg ", %0" :: "r"(val)); })
+
+// ICC register access (CPU Interface)
+#define ICC_CTLR_EL1            0xC12
+#define ICC_PMR_EL1             0xC13
+#define ICC_IAR1_EL1            0xC0C
+#define ICC_EOIR1_EL1           0xC10
+#define ICC_SRE_EL1             0xC15
+
+// Virtual Timer interrupt ID for GIC
+#define VIRTUAL_TIMER_IRQ       27
+
+void setup_gic(void) {
+    // Enable system register access to GIC
+    uint64_t sre = read_sysreg(ICC_SRE_EL1);
+    sre |= 1;
+    write_sysreg(ICC_SRE_EL1, sre);
+
+    // Set interrupt priority mask to allow all priorities
+    write_sysreg(ICC_PMR_EL1, 0xFF);
+
+    // Enable Group 1 interrupts
+    write_sysreg(ICC_CTLR_EL1, 1);
+}
+
+// 定义访问系统寄存器的宏
+#define write_sysreg(reg, val) __asm__ volatile ("msr " #reg ", %0" : : "r"(val))
+#define read_sysreg(reg) ({ uint64_t val; __asm__ volatile ("mrs %0, " #reg : "=r"(val)); val; })
+
+#define CNTV_TVAL_EL0  CNTV_TVAL_EL0
+#define CNTV_CTL_EL0   CNTV_CTL_EL0
+
+// 设置计时器初始值
+void configure_vtimer(uint64_t value) {
+    write_sysreg(CNTV_TVAL_EL0, value);
+    uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
+    write_sysreg(CNTV_CTL_EL0, ctl | 1); // 设置使能位
+}
+
+// 处理计时器中断
+void handle_vtimer_interrupt(void) {
+    // 在这里处理计时器中断，例如更新系统时间、执行调度等
+    // 清除计时器中断状态
+    uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
+    write_sysreg(CNTV_CTL_EL0, ctl & ~2); // 清除中断位
+}
+#define ICC_PMR_EL1     "S3_0_C4_C6_0"
+#define ICC_CTLR_EL1    "S3_0_C12_C12_4"
+#define ICC_IAR1_EL1    "S3_0_C12_C12_0"
+#define ICC_EOIR1_EL1   "S3_0_C12_C12_1"
+#define ICC_SRE_EL1     "S3_0_C12_C12_5"
+
+#define GICD_BASE       0x3001000// GIC Distributor base address (example)
+#define GICR_BASE       0x3020000 // GIC Redistributor base address (example)
+#define GICD_CTLR       (GICD_BASE + 0x0000)
+#define GICD_ISENABLER  (GICD_BASE + 0x0100)
+#define GICR_WAKER      (GICR_BASE + 0x0014)
+#define GICR_CTLR       (GICR_BASE + 0x0000)
+#define GICR_ISENABLER  (GICR_BASE + 0x0100)
+
+// Initialize Timer 0 and Interrupt Controller
+void init_timer(void)
+{
+    setup_gic();
+
+    // Wake up the redistributor
+    *(volatile uint32_t *)(GICR_WAKER) &= ~(1 << 1);
+    while (*(volatile uint32_t *)(GICR_WAKER) & (1 << 2));
+
+    // Enable the redistributor
+    *(volatile uint32_t *)(GICR_CTLR) = 1;//gicdctlr_EnableGrp1NS;
+
+    // Enable the distributor
+    *(volatile uint32_t *)(GICD_CTLR) = gicdctlr_EnableGrp1NS;
+
+    // Enable the specific interrupt ID for the virtual timer (27 in this example)
+    *(volatile uint32_t *)(GICR_ISENABLER) = (1 << (27 % 32));
+    *(volatile uint32_t *)(GICD_ISENABLER) = (1 << (27 % 32));
+
+    configure_vtimer(100); // 设置计时器值为1000000（假设计时器频率为1 MHz，即1秒）
+
+    __asm__("msr daifclr, #2"); // Enable IRQs
+    //setICC_IGRPEN1_EL1(igrpEnable);
+  
+    while (1) {
+	    uint32_t intid, iar;
+	
+        asm volatile("wfi");
+        // 轮询中断状?
+        iar = read_sysreg(ICC_IAR1_EL1);
+        intid = iar & 0xFFFFFF;
+        char buf[0x100];int n;// = { 'i', 'n', 't', ' ', '9', '\0' };
+        n = snprintf(buf, 100, "intid %d\n", intid);
+        HYPERVISOR_console_io(CONSOLEIO_write, n, buf);
+        if (intid == VIRTUAL_TIMER_IRQ) {
+            HYPERVISOR_console_io(CONSOLEIO_write, 8, "xxxxxxxxxxxxxxx");
+        }
+
+        uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
+        if (ctl & 2) { // 检查中断位是否设置
+            handle_vtimer_interrupt();
+            HYPERVISOR_console_io(CONSOLEIO_write, 8, "tt-tttttt\n");
+            configure_vtimer(10000000); // 重新设置计时器值
+        } else {
+            //HYPERVISOR_console_io(CONSOLEIO_write, 1, ".\n");
+        }
+    }    
 }
 
