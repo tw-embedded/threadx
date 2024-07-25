@@ -20,6 +20,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/inc
 )
 
+target_compile_options(${PROJECT_NAME} PRIVATE -DEL1)
+
 set(EXE_NAME threadxen)
 set(APP_NAME ${EXE_NAME}.elf)
 set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)

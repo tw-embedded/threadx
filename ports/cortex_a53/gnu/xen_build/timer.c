@@ -22,7 +22,7 @@ void irqHandler(void)
 
   ID = getICC_IAR1(); // readIntAck();
     HYPERVISOR_console_io(CONSOLEIO_write, 8, "time irq\n");
-    while(1);  // Check for reserved IDs
+  // Check for reserved IDs
   if ((1020 <= ID) && (ID <= 1023))
   {
       //printf("irqHandler() - Reserved INTID %d\n\n", ID);
@@ -31,13 +31,9 @@ void irqHandler(void)
 
   switch(ID)
   {
-    case 34:
-      // Dual-Timer 0 (SP804)
-      //printf("irqHandler() - External timer interrupt\n\n");
-
-      /* Call ThreadX timer interrupt processing.  */
-      _tx_timer_interrupt();
-
+    case 27:
+      HYPERVISOR_console_io(CONSOLEIO_write, 8, "vvvv irq\n");
+      handle_vtimer_interrupt();
       break;
 
     default:
@@ -312,7 +308,7 @@ void init_timer(void)
     configure_vtimer(100); // 设置计时器值为1000000（假设计时器频率为1 MHz，即1秒）
 
     __asm__("msr daifclr, #2"); // Enable IRQs
-    //setICC_IGRPEN1_EL1(igrpEnable);
+    setICC_IGRPEN1_EL1(igrpEnable);
   
     while (1) {
 	    uint32_t intid, iar;
