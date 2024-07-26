@@ -12,9 +12,7 @@
 // Virtual Timer interrupt ID for GIC
 #define VIRTUAL_TIMER_IRQ 27
 
-//
 // Accessors for the architected generic timer registers
-//
 #define ARM_ARCH_TIMER_ENABLE   (1 << 0)
 #define ARM_ARCH_TIMER_IMASK    (1 << 1)
 #define ARM_ARCH_TIMER_ISTATUS  (1 << 2)
