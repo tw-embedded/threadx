@@ -24,7 +24,7 @@ void irqHandler(void)
   unsigned int ID;
 
   ID = getICC_IAR1(); // readIntAck();
-    HYPERVISOR_console_io(CONSOLEIO_write, 8, "time irq\n");
+    //HYPERVISOR_console_io(CONSOLEIO_write, 8, "time irq\n");
   // Check for reserved IDs
   if ((1020 <= ID) && (ID <= 1023))
   {
@@ -35,7 +35,7 @@ void irqHandler(void)
   switch(ID)
   {
     case 27:
-      HYPERVISOR_console_io(CONSOLEIO_write, 8, "vvvv irq\n");
+      //HYPERVISOR_console_io(CONSOLEIO_write, 8, "vvvv irq\n");
       handle_vtimer_interrupt();
       _tx_timer_interrupt();
       break;
@@ -207,6 +207,11 @@ void configure_vtimer(uint64_t ms)
     write_sysreg(CNTV_CTL_EL0, ctl | 1); // 设置使能位
 }
 
+#define SCALE 100
+
+// 1 tick is 10ms
+#define TICK (10 * SCALE)
+
 // 处理计时器中断
 void handle_vtimer_interrupt(void)
 {
@@ -215,7 +220,7 @@ void handle_vtimer_interrupt(void)
     uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
     write_sysreg(CNTV_CTL_EL0, ctl & ~2); // 清除中断位
 
-    configure_vtimer(10); // 10ms
+    configure_vtimer(TICK); // 10ms
 }
 
 #define ICC_PMR_EL1     "S3_0_C4_C6_0"
@@ -251,7 +256,7 @@ void init_timer(void)
     *(volatile uint32_t *)(GICR_ISENABLER) = (1 << (27 % 32));
     *(volatile uint32_t *)(GICD_ISENABLER) = (1 << (27 % 32));
 
-    configure_vtimer(100); // 设置计时器值为1000000（假设计时器频率为1 MHz，即1秒）
+    configure_vtimer(TICK); // 设置计时器值为1000000（假设计时器频率为1 MHz，即1秒）
 
     __asm__("msr daifclr, #2"); // Enable IRQs
     setICC_IGRPEN1_EL1(igrpEnable);
