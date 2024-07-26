@@ -14,6 +14,9 @@
 
 void   _tx_timer_interrupt(void);
 
+#define write_sysreg(reg, val) __asm__ volatile ("msr " #reg ", %0" : : "r"(val))
+#define read_sysreg(reg) ({ uint64_t val; __asm__ volatile ("mrs %0, " #reg : "=r"(val)); val; })
+
 #define CONSOLEIO_write 0
 
 void irqHandler(void)
@@ -34,6 +37,7 @@ void irqHandler(void)
     case 27:
       HYPERVISOR_console_io(CONSOLEIO_write, 8, "vvvv irq\n");
       handle_vtimer_interrupt();
+      _tx_timer_interrupt();
       break;
 
     default:
@@ -82,7 +86,6 @@ void fiqHandler(void)
 
     default:
       // Unexpected ID value
-while (1);
       //printf("fiqHandler() - Unexpected INTID %d\n\n", ID);
       break;
   }
@@ -139,9 +142,9 @@ static uint64_t ArmReadCntFrq(void)
 }
 
 static uint64_t ArmReadCntvCt(void)
-{   
+{
     uint64_t value;
-    
+
     __asm__ __volatile__("mrs x0, cntvct_el0\n\t"
                          "str x0, %0\n\t"
                          :"=m"(value)
@@ -157,65 +160,6 @@ static void ArmWriteCntvCval(uint64_t value)
                          :
                          :"m"(value)
                          :"memory");
-}
-
-static void set_timer_period(uint64_t period)
-{
-    uint64_t tick;
-    uint64_t count;
-
-    //stopTimer();
-    if (period) {
-        // mTimerTicks = TimerPeriod in 1ms unit x Frequency.10^-3
-        //             = TimerPeriod.10^-4 x Frequency.10^-3
-        //             = (TimerPeriod x Frequency) x 10^-7
-        tick = period * ArmReadCntFrq();
-        tick /= 10000000U;
-
-        // Get value of the current timer
-        count = ArmReadCntvCt();
-        // Set the interrupt in Current Time + mTimerTick
-        ArmWriteCntvCtl(count + tick);
-
-        //startTimer();
-    }
-}
-
-static void reenable_timer(void)
-{
-    uint64_t TimerCtrlReg;
-
-    TimerCtrlReg  = ArmReadCntvCtl ();
-    TimerCtrlReg |= ARM_ARCH_TIMER_ENABLE;
-
-    //
-    // When running under Xen, we need to unmask the interrupt on the timer side
-    // as Xen will mask it when servicing the interrupt at the hypervisor level
-    // and delivering the virtual timer interrupt to the guest. Otherwise, the
-    // interrupt will fire again, trapping into the hypervisor again, etc. etc.
-    //
-    TimerCtrlReg &= ~ARM_ARCH_TIMER_IMASK;
-    ArmWriteCntvCtl (TimerCtrlReg);
-}
-void irq()
-{
-    uint64_t count, compare;
-    
-    HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadi\n");
-    
-    // eoi
-
-    // check interrupt source
-    if (ArmReadCntvCtl() & ARM_ARCH_TIMER_ISTATUS) {
-        // Get current counter value
-        count = ArmReadCntvCt();
-        // Get the counter value to compare with
-        compare = ArmReadCntvCval();
-        // Set next compare value
-        ArmWriteCntvCval(compare);
-        reenable_timer();
-        __asm__ __volatile__("isb\n\t");
-    }
 }
 
 // Virtual Timer registers
@@ -238,7 +182,8 @@ void irq()
 // Virtual Timer interrupt ID for GIC
 #define VIRTUAL_TIMER_IRQ       27
 
-void setup_gic(void) {
+void setup_gic(void)
+{
     // Enable system register access to GIC
     uint64_t sre = read_sysreg(ICC_SRE_EL1);
     sre |= 1;
@@ -251,27 +196,28 @@ void setup_gic(void) {
     write_sysreg(ICC_CTLR_EL1, 1);
 }
 
-// 定义访问系统寄存器的宏
-#define write_sysreg(reg, val) __asm__ volatile ("msr " #reg ", %0" : : "r"(val))
-#define read_sysreg(reg) ({ uint64_t val; __asm__ volatile ("mrs %0, " #reg : "=r"(val)); val; })
-
-#define CNTV_TVAL_EL0  CNTV_TVAL_EL0
-#define CNTV_CTL_EL0   CNTV_CTL_EL0
-
 // 设置计时器初始值
-void configure_vtimer(uint64_t value) {
-    write_sysreg(CNTV_TVAL_EL0, value);
+void configure_vtimer(uint64_t ms)
+{
+    uint64_t freq = read_sysreg(CNTFRQ_EL0); // 获取计时器频率
+    uint64_t interval = (freq / 1000) * ms; // 将毫秒转换为计时器周期
+
+    write_sysreg(CNTV_TVAL_EL0, interval);
     uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
     write_sysreg(CNTV_CTL_EL0, ctl | 1); // 设置使能位
 }
 
 // 处理计时器中断
-void handle_vtimer_interrupt(void) {
+void handle_vtimer_interrupt(void)
+{
     // 在这里处理计时器中断，例如更新系统时间、执行调度等
     // 清除计时器中断状态
     uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
     write_sysreg(CNTV_CTL_EL0, ctl & ~2); // 清除中断位
+
+    configure_vtimer(10); // 10ms
 }
+
 #define ICC_PMR_EL1     "S3_0_C4_C6_0"
 #define ICC_CTLR_EL1    "S3_0_C12_C12_4"
 #define ICC_IAR1_EL1    "S3_0_C12_C12_0"
@@ -309,10 +255,10 @@ void init_timer(void)
 
     __asm__("msr daifclr, #2"); // Enable IRQs
     setICC_IGRPEN1_EL1(igrpEnable);
-  
+#if 0
     while (1) {
 	    uint32_t intid, iar;
-	
+
         asm volatile("wfi");
         // 轮询中断状?
         iar = read_sysreg(ICC_IAR1_EL1);
@@ -332,6 +278,8 @@ void init_timer(void)
         } else {
             //HYPERVISOR_console_io(CONSOLEIO_write, 1, ".\n");
         }
-    }    
+    }
+#endif
 }
+
 

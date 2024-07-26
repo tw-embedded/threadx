@@ -127,6 +127,8 @@ __tx_timer_no_time_slice:
 
     LDR     x1, =_tx_timer_current_ptr          // Pickup current timer pointer addr
     LDR     x0, [x1, #0]                        // Pickup current timer
+    CMP     x0, #0
+    BEQ     __tx_timer_nothing_expired
     LDR     x2, [x0, #0]                        // Pickup timer list entry
     CMP     x2, #0                              // Is there anything in the list?
     BEQ     __tx_timer_no_timer                 // No, just increment the timer
