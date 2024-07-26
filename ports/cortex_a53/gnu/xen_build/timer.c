@@ -9,8 +9,6 @@
 // 1 tick is 10ms
 #define TICK (10 * SCALE)
 
-#define CONSOLEIO_write 0
-
 // Virtual Timer interrupt ID for GIC
 #define VIRTUAL_TIMER_IRQ 27
 
@@ -123,7 +121,7 @@ void irqHandler(void)
   unsigned int ID;
 
   ID = getICC_IAR1(); // readIntAck();
-    //HYPERVISOR_console_io(CONSOLEIO_write, 8, "time irq\n");
+  
   // Check for reserved IDs
   if ((1020 <= ID) && (ID <= 1023)) {
       //printf("irqHandler() - Reserved INTID %d\n\n", ID);
@@ -132,7 +130,6 @@ void irqHandler(void)
 
   switch (ID) {
     case VIRTUAL_TIMER_IRQ:
-      //HYPERVISOR_console_io(CONSOLEIO_write, 8, "vvvv irq\n");
       handle_vtimer_interrupt();
       _tx_timer_interrupt();
       break;
@@ -212,6 +209,8 @@ void init_timer(void)
 
 #define read_sysreg(reg) ({ uint64_t val; __asm__ volatile ("mrs %0, " #reg : "=r"(val)); val; })
 #define write_sysreg(reg, val) __asm__ volatile ("msr " #reg ", %0" : : "r"(val))
+
+#define CONSOLEIO_write 0
 
         iar = read_sysreg(ICC_IAR1_EL1);
         intid = iar & 0xFFFFFF;
