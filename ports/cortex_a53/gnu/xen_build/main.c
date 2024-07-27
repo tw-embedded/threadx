@@ -75,9 +75,11 @@ UCHAR   event_buffer[65536];
 
 /* Define main entry point.  */
 
-int main(void)
+int main(int argc, char *argv[])
 {
     HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadx\n");
+
+    printf("main argc %d, argv %lx\n", argc, argv[1]);
 
     /* Initialize timer.  */
     init_timer();

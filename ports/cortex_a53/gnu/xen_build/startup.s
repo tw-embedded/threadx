@@ -300,8 +300,13 @@ drop_to_el1:
     .type el1_entry_aarch64, "function"
 el1_entry_aarch64:
 
+    // save dtb physical address
+    mov x29, x0
+
+    // just check el by manual
     mrs x1, CurrentEL
 
+    // load el1 interrupt vector
     ldr x1, =el1_vectors
     msr VBAR_EL1, x1
 
@@ -700,8 +705,12 @@ argv:
 arg0:
     .byte 0
     .popsection
+    
+    ldr x0, =argv
+    add x0, x0, #8
+    str x29, [x0]
 
-    mov x0, #1
+    mov x0, #2
     ldr x1, =argv
     bl main
 

@@ -12,3 +12,5 @@ int console_putc(unsigned char c)
 	return 1;
 }
 
+void __assert_fail(void) { }
+
