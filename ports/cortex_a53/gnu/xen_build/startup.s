@@ -47,6 +47,7 @@
     .global __ttb0_l2_periph
     .global __top_of_ram
     .global gicd
+    .global dtb
     .global __stack
     .global __el3_stack
     .global __cs3_peripherals
@@ -527,6 +528,42 @@ loop1:
     add x1, x1, #0x200, LSL #12    // equiv to add x1, x1, #(1 << 21)  // 2MB per entry
     bne loop1
 
+    //** map dtb address space **
+    ldr x22, =__ttb0_l2_dtb
+    mov x1, #(512 << 3)
+    mov x0, x22
+    bl ZeroBlock
+    ldr x4, =dtb 
+    ubfx x23, x4, #30, #2
+    ubfx x24, x4, #21, #9
+    // update level 1 table
+    orr x1, x22, #TT_S1_ATTR_TABLE
+    ldr x0, [x21, x23, lsl #3]
+    cmp x0, #0
+    beq use_dtb_l2_table
+    nop
+    // use current level 1 table (__ttb0_l2_ram)
+    lsr x0, x0, #2
+    lsl x0, x0, #2
+    mov x22, x0
+    b update_l2_table
+  use_dtb_l2_table:
+    str x1, [x21, x23, lsl #3]
+  update_l2_table:
+    // 2M for dtb is enough
+    mov x4, x29
+    bic x4, x4, #((1 << 21) - 1)
+    ldr x1, =(TT_S1_ATTR_BLOCK | \
+             (1 << TT_S1_ATTR_MATTR_LSB) | \
+              TT_S1_ATTR_NS | \
+              TT_S1_ATTR_AP_RW_PL1 | \
+              TT_S1_ATTR_SH_INNER | \
+              TT_S1_ATTR_AF | \
+              TT_S1_ATTR_nG)
+    orr x1, x1, x4
+    // x0 = address of level 2 table
+    add x0, x22, x24, lsl #3
+    str x1, [x0]
 
     //
     // now mapping the Peripheral regions - clear out the
@@ -702,6 +739,7 @@ nol2setup:
 argv:
     .dword arg0
     .dword 0
+    .dword 0
 arg0:
     .byte 0
     .popsection
@@ -709,8 +747,11 @@ arg0:
     ldr x0, =argv
     add x0, x0, #8
     str x29, [x0]
+    ldr x1, =dtb
+    add x0, x0, #8
+    str x1, [x0]
 
-    mov x0, #2
+    mov x0, #3
     ldr x1, =argv
     bl main
 

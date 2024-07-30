@@ -79,14 +79,14 @@ int main(int argc, char *argv[])
 {
     HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadx\n");
 
-    printf("main argc %d, argv %lx\n", argc, argv[1]);
-#if 0
-    if (fdt_check_header(argv[1])) {
+    printf("main argc %d, argv %p, dtb va %p\n", argc, argv[1], argv[2]);
+    
+    if (fdt_check_header(argv[2])) {
         printf("invalid dtb from xen\n");
     } else {
         printf("valid DTB pointer\n");
     }
-#endif
+    
     /* Initialize timer.  */
     init_timer();
     

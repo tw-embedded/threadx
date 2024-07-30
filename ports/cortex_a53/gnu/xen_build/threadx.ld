@@ -33,6 +33,11 @@ SECTIONS
         *(.gicr)
     }
 
+    .dtb 0x38000000 (NOLOAD) : {
+        dtb = .;
+	. = . + 0x10000;
+    }
+
     . = 0x40000000; /* THREADXEN_VA */
     _threadxen_start = .;
     .pecoff : {
@@ -206,6 +211,13 @@ SECTIONS
     {
         . = ALIGN(4096);
         __ttb0_l2_private = .;
+        . = . + 0x1000;
+    }
+
+    .ttb0_l2_dtb (NOLOAD):
+    {
+        . = ALIGN(4096);
+        __ttb0_l2_dtb = .;
         . = . + 0x1000;
     }
 
