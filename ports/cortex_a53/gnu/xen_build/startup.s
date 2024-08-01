@@ -542,6 +542,25 @@ loop1:
     add x1, x1, #0x200, LSL #12    // equiv to add x1, x1, #(1 << 21)  // 2MB per entry
     bne loop1
 
+    // ** map shadow space
+    // map level 1 shaddow va
+    ldr x10, =__code_start
+    virt_to_phys x10
+    ubfx x11, x10, #30, #2
+    str x1, [x21, x11, lsl #3]
+    // map level 2 shaddow va
+    ubfx x2, x10, #21, #9
+    add x0, x22, x2, lsl #3
+    ldr x1, =(TT_S1_ATTR_BLOCK | \
+             (1 << TT_S1_ATTR_MATTR_LSB) | \
+              TT_S1_ATTR_NS | \
+              TT_S1_ATTR_AP_RW_PL1 | \
+              TT_S1_ATTR_SH_INNER | \
+              TT_S1_ATTR_AF | \
+              TT_S1_ATTR_nG)
+    orr x1, x1, x4
+    str x1, [x0]
+
     //** map dtb address space **
     ldr x22, =__ttb0_l2_dtb
     virt_to_phys x22
@@ -700,16 +719,6 @@ nol2setup:
     //
     dsb ish
 
-    // ** set stack pointer with VA
-    ldr x0, =__handler_stack
-    sub x0, x0, x19, lsl #14
-    mov sp, x0
-    MSR     SPSel, #0
-    ISB
-    ldr x0, =__stack
-    sub x0, x0, x19, lsl #14
-    mov sp, x0
-
     //
     // Enable the MMU.  Caches will be enabled later, after scatterloading.
     //
@@ -720,8 +729,18 @@ nol2setup:
     isb
 
     // jump to VA space & flush pipeline
-    b va_space
+    ldr x0, =va_space
+    br x0
   va_space:
+    // ** set stack pointer with VA
+    ldr x0, =__handler_stack
+    sub x0, x0, x19, lsl #14
+    mov sp, x0
+    MSR     SPSel, #0
+    ISB
+    ldr x0, =__stack
+    sub x0, x0, x19, lsl #14
+    mov sp, x0
 
     //
     // The Arm Architecture Reference Manual for Armv8-A states:
