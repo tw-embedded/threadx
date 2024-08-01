@@ -556,6 +556,10 @@ void SetPrivateIntSecurity(uint32_t gicr, uint32_t id, GICIGROUPRBits_t group);
  */
 void SetPrivateIntSecurityBlock(uint32_t gicr, GICIGROUPRBits_t group);
 
+#define GICR_INDEX 0
+
+void setup_gic(void *dtb);
+
 #endif /* ndef GICV3_h */
 
 /* EOF GICv3.h */
