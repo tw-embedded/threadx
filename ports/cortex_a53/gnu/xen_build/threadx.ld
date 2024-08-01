@@ -33,18 +33,18 @@ SECTIONS
         *(.gicr)
     }
 
-    .dtb 0x38000000 (NOLOAD) : {
+    .dtb 0x8000000 (NOLOAD) : {
         dtb = .;
 	. = . + 0x10000;
     }
 
-    . = 0x40000000; /* THREADXEN_VA */
+    . = 0x10000000; /* THREADXEN_VA */
     _threadxen_start = .;
     .pecoff : {
         KEEP(*(.pecoff))
     }
 
-    .vectors 0x40001000:
+    .vectors 0x10001000:
     {
         __code_start = .;
         KEEP(*(StartUp))

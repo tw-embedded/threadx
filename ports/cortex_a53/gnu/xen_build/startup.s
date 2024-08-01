@@ -291,7 +291,10 @@ drop_to_el1:
     msr SPSR_EL3, x1
     eret
 
-
+// x27 = offset of pa & va
+.macro virt_to_phys va
+	add \va, \va, x27
+.endm
 
 // ------------------------------------------------------------
 // EL1 - Common start-up code
@@ -300,15 +303,20 @@ drop_to_el1:
     .global el1_entry_aarch64
     .type el1_entry_aarch64, "function"
 el1_entry_aarch64:
+    // calculate offset of pa & va
+    adr x27, el1_entry_aarch64
+    ldr x28, =el1_entry_aarch64
+    sub x27, x27, x28
 
     // save dtb physical address
-    mov x29, x0
+    mov x28, x0
 
     // just check el by manual
     mrs x1, CurrentEL
 
     // load el1 interrupt vector
     ldr x1, =el1_vectors
+    virt_to_phys x1
     msr VBAR_EL1, x1
 
     //
@@ -316,11 +324,13 @@ el1_entry_aarch64:
     // the scatter file allocates 2^14 bytes per app stack
     //
     ldr x0, =__handler_stack
+    virt_to_phys x0
     sub x0, x0, x19, lsl #14
     mov sp, x0
     MSR     SPSel, #0
     ISB
     ldr x0, =__stack
+    virt_to_phys x0
     sub x0, x0, x19, lsl #14
     mov sp, x0
 
@@ -351,6 +361,7 @@ el1_entry_aarch64:
     // TTBR1_EL1 is not used in this example
     //
     ldr x1, =__ttb0_l1
+    virt_to_phys x1
     msr TTBR0_EL1, x1
 
 
@@ -432,7 +443,7 @@ el1_primary:
     // ready for individual CPU enables later
     //
     mov w0, #(1 << 1)  // gicdctlr_EnableGrp1A
-    bl  EnableGICD
+    //bl  EnableGICD
 
     //
     // Generate TTBR0 L1
@@ -449,6 +460,7 @@ el1_primary:
     // x21 = address of L1 tables
     //
     ldr x21, =__ttb0_l1
+    virt_to_phys x21
     mov x0, x21
     mov x1, #(4 << 3)
     bl  ZeroBlock
@@ -461,6 +473,7 @@ el1_primary:
     //       we want to re-use the tables for mapping peripherals
     //
     ldr x22, =__ttb0_l2_ram
+    virt_to_phys x22
     mov x1, #(512 << 3)
     mov x0, x22
     bl  ZeroBlock
@@ -514,6 +527,7 @@ el1_primary:
               TT_S1_ATTR_SH_INNER | \
               TT_S1_ATTR_AF | \
               TT_S1_ATTR_nG)
+    virt_to_phys x4
     orr x1, x1, x4
 
     //
@@ -530,10 +544,11 @@ loop1:
 
     //** map dtb address space **
     ldr x22, =__ttb0_l2_dtb
+    virt_to_phys x22
     mov x1, #(512 << 3)
     mov x0, x22
     bl ZeroBlock
-    ldr x4, =dtb 
+    ldr x4, =dtb // this is physical address, not va 
     ubfx x23, x4, #30, #2
     ubfx x24, x4, #21, #9
     // update level 1 table
@@ -551,7 +566,7 @@ loop1:
     str x1, [x21, x23, lsl #3]
   update_l2_table:
     // 2M for dtb is enough
-    mov x4, x29
+    mov x4, x28
     bic x4, x4, #((1 << 21) - 1)
     ldr x1, =(TT_S1_ATTR_BLOCK | \
              (1 << TT_S1_ATTR_MATTR_LSB) | \
@@ -685,6 +700,16 @@ nol2setup:
     //
     dsb ish
 
+    // ** set stack pointer with VA
+    ldr x0, =__handler_stack
+    sub x0, x0, x19, lsl #14
+    mov sp, x0
+    MSR     SPSel, #0
+    ISB
+    ldr x0, =__stack
+    sub x0, x0, x19, lsl #14
+    mov sp, x0
+
     //
     // Enable the MMU.  Caches will be enabled later, after scatterloading.
     //
@@ -693,6 +718,10 @@ nol2setup:
     bic x1, x1, #SCTLR_ELx_A // Disable alignment fault checking.  To enable, change bic to orr
     msr SCTLR_EL1, x1
     isb
+
+    // jump to VA space & flush pipeline
+    b va_space
+  va_space:
 
     //
     // The Arm Architecture Reference Manual for Armv8-A states:
@@ -746,7 +775,7 @@ arg0:
     
     ldr x0, =argv
     add x0, x0, #8
-    str x29, [x0]
+    str x28, [x0]
     ldr x1, =dtb
     add x0, x0, #8
     str x1, [x0]
@@ -831,6 +860,16 @@ loop_wfi:
     bic x1, x1, #SCTLR_ELx_A // Disable alignment fault checking.  To enable, change bic to orr
     msr SCTLR_EL1, x1
     isb
+
+    // ** set stack pointer with VA
+    ldr x0, =__handler_stack
+    sub x0, x0, x19, lsl #14
+    mov sp, x0
+    MSR     SPSel, #0
+    ISB
+    ldr x0, =__stack
+    sub x0, x0, x19, lsl #14
+    mov sp, x0
 
     //
     // Branch to thread start
