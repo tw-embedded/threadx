@@ -567,7 +567,7 @@ loop1:
     mov x1, #(512 << 3)
     mov x0, x22
     bl ZeroBlock
-    ldr x4, =dtb // this is physical address, not va 
+    ldr x4, =dtb // this is virtual address 
     ubfx x23, x4, #30, #2
     ubfx x24, x4, #21, #9
     // update level 1 table
@@ -611,6 +611,8 @@ loop1:
     // x24 = address of L2 peripheral tables
     //
     ldr x24, =__ttb0_l2_periph
+
+    b no_map_gicd
 
     //
     // get the GICD address into x4 and calculate
@@ -713,6 +715,8 @@ nol2setup:
     // only a single L2 entry again - write it
     //
     str x1, [x24, x2, lsl #3]
+
+no_map_gicd:
 
     //
     // issue a barrier to ensure all table entry writes are complete

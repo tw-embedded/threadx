@@ -18,6 +18,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/inc
+    ${CMAKE_SOURCE_DIR}/../dtc/libfdt
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -DEL1)
@@ -44,6 +45,7 @@ target_sources(${APP_NAME} PRIVATE
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/vectors.s
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/pecoff.s
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/hypercall.s
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/mmap.c
     # {{END_TARGET_SOURCES}}
 )
 add_custom_command(

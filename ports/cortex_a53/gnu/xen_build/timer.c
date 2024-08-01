@@ -187,7 +187,7 @@ void fiqHandler(void)
 }
 
 // Initialize Timer 0 and Interrupt Controller
-void init_timer(void)
+void init_timer(void *dtb)
 {
     setup_gic();
 

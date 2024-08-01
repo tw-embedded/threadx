@@ -19,7 +19,7 @@ SECTIONS
     /*
      * GICv3 distributor
      */
-    .gicd 0x3001000 (NOLOAD):
+    .gicd 0x4001000 (NOLOAD): /* 2M block, so offset is important */
     {
         *(.gicd)
     }
@@ -28,14 +28,14 @@ SECTIONS
      * GICv3 redistributors
      * 128KB for each redistributor in the system
      */
-    .gicr 0x3020000 (NOLOAD):
+    .gicr 0x4020000 (NOLOAD): /* 2M block, so offset is important */
     {
         *(.gicr)
     }
 
     .dtb 0x8000000 (NOLOAD) : {
         dtb = .;
-	. = . + 0x10000;
+        . = . + 0x10000;
     }
 
     . = 0x10000000; /* THREADXEN_VA */

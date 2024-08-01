@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-extern void init_timer(void);    /* in timer_interrupts.c  */
+extern void init_timer(void *device_tree);    /* in timer_interrupts.c  */
 
 
 #define     DEMO_STACK_SIZE         1024
@@ -71,24 +71,28 @@ UCHAR   event_buffer[65536];
 
 #endif
 
+#include <libfdt.h>
 #define CONSOLEIO_write 0
 
 /* Define main entry point.  */
 
 int main(int argc, char *argv[])
 {
+    void *device_tree;
+
     HYPERVISOR_console_io(CONSOLEIO_write, 8, "threadx\n");
 
     printf("main argc %d, argv %p, dtb va %p\n", argc, argv[1], argv[2]);
     
-    if (fdt_check_header(argv[2])) {
+    device_tree = argv[2];
+    if (fdt_check_header(device_tree)) {
         printf("invalid dtb from xen\n");
     } else {
         printf("valid DTB pointer\n");
     }
-    
+mmap_dev(0x4001000, 0x3001000);
     /* Initialize timer.  */
-    init_timer();
+    init_timer(device_tree);
     
     /* Enter ThreadX.  */
     tx_kernel_enter();
