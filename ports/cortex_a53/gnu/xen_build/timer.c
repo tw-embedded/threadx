@@ -72,8 +72,50 @@ static void ArmWriteCntvTval(uint64_t value)
                          :"memory");
 }
 
-static void setup_gic(void)
+#include <stdio.h>
+#include <libfdt.h>
+
+extern uint8_t __attribute__((section(".gicd"))) gicd;
+
+static void init_gic(void *device_tree)
 {
+    int node = 0;
+    int depth = 0;
+
+    for (;;) {
+        node = fdt_next_node(device_tree, node, &depth);
+        if (node <= 0 || depth < 0)
+            break;
+
+        if (fdt_getprop(device_tree, node, "interrupt-controller", NULL)) {
+            int len = 0;
+
+            const uint64_t *reg = fdt_getprop(device_tree, node, "reg", &len);
+
+            /* We have two registers (GICC and GICD), each of which contains
+             * two parts (an address and a size), each of which is a 64-bit
+             * value (8 bytes), so we expect a length of 2 * 2 * 8 = 32.
+             * If any extra values are passed in future, we ignore them. */
+            if (reg == NULL || len < 32) {
+                printf("bad 'reg' property: %p %d\n", reg, len);
+                continue;
+            }
+
+            mmap_dev(&gicd, fdt64_to_cpu(reg[0]));
+	    //mmap_dev(0x4020000, fdt64_to_cpu(reg[2]));
+            printf("gicd_base = %p, gicc_base = %p\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[2]));
+            return;
+        }
+    }
+
+    printf("gic not found!\n");
+}
+
+static void setup_gic(void *dtb)
+{
+    // get pa from dtb
+    init_gic(dtb);
+
     // Enable system register access to GIC
     uint64_t sre = getICC_SRE_EL1();
     sre |= sreDFB;
@@ -189,7 +231,7 @@ void fiqHandler(void)
 // Initialize Timer 0 and Interrupt Controller
 void init_timer(void *dtb)
 {
-    setup_gic();
+    setup_gic(dtb);
 
     // Enable the specific interrupt ID for the virtual timer 
     EnableSPI(VIRTUAL_TIMER_IRQ);

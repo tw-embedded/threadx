@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     } else {
         printf("valid DTB pointer\n");
     }
-mmap_dev(0x4001000, 0x3001000);
+
     /* Initialize timer.  */
     init_timer(device_tree);
     
