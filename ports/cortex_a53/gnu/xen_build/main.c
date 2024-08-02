@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
         printf("valid DTB pointer\n");
     }
 
-    setup_gic(dtb);
+    setup_gic(device_tree);
 
     /* Initialize timer.  */
     init_timer(device_tree);

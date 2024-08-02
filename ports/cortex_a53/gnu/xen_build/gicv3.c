@@ -31,7 +31,7 @@ static void dump_dtb(void *fdt)
             prop = fdt_getprop_by_offset(fdt, offset, &propname, &err);
             printf("prop %s\n",propname);
             if (0 == strcmp(propname, "bootargs")) {
-                printf("bootargs: %s\n", fdt_getprop(fdt, offset, "bootargs", &len));
+                printf("bootargs: %s\n", (char *) fdt_getprop(fdt, offset, "bootargs", &len));
             }
             break;
     case FDT_END:
@@ -73,11 +73,11 @@ static void init_gic(void *device_tree)
 
         addr = fdt64_to_cpu(reg[0]);
         gicd_offset = addr & MASK_2M;
-        mmap_dev(&__cs3_peripherals + gicd_offset, addr, fdt64_to_cpu(reg[1]));
+        mmap_dev((uint64_t) &__cs3_peripherals + gicd_offset, addr, fdt64_to_cpu(reg[1]));
 
         addr = fdt64_to_cpu(reg[2]);
-            gicr_offset = addr & MASK_2M;
-            mmap_dev(&__cs3_peripherals + gicr_offset, addr, fdt64_to_cpu(reg[3]));
+        gicr_offset = addr & MASK_2M;
+        mmap_dev((uint64_t) &__cs3_peripherals + gicr_offset, addr, fdt64_to_cpu(reg[3]));
 
         printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
             return;
@@ -94,9 +94,9 @@ void setup_gic(void *dtb)
     // get pa from dtb
     init_gic(dtb);
 
-    printf("gicd %lx, gicr %lx\n", &__cs3_peripherals + gicd_offset, &__cs3_peripherals + gicr_offset);
-    init_gicd_base(&__cs3_peripherals + gicd_offset);
-    init_gicr_base(&__cs3_peripherals + gicr_offset);
+    printf("gicd %p, gicr %p\n", &__cs3_peripherals + gicd_offset, &__cs3_peripherals + gicr_offset);
+    init_gicd_base((uint64_t) &__cs3_peripherals + gicd_offset);
+    init_gicr_base((uint64_t) &__cs3_peripherals + gicr_offset);
 
     // Enable system register access to GIC
     uint64_t sre = getICC_SRE_EL1();
