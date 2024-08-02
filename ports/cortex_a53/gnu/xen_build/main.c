@@ -71,6 +71,7 @@ UCHAR   event_buffer[65536];
 
 #endif
 
+#include "gicv3.h"
 #include <libfdt.h>
 #define CONSOLEIO_write 0
 

@@ -97,14 +97,14 @@ void SyncAREinGICD(GICDCTLRFlags_t flags, uint32_t dosync)
 {
     if (dosync)
     {
-	const uint32_t tmask = gicdctlr_ARE_S | gicdctlr_ARE_NS;
-	const uint32_t tval = flags & tmask;
+    const uint32_t tmask = gicdctlr_ARE_S | gicdctlr_ARE_NS;
+    const uint32_t tval = flags & tmask;
 
-	while ((gicd->GICD_CTLR & tmask) != tval)
-	    continue;
+    while ((gicd->GICD_CTLR & tmask) != tval)
+        continue;
     }
     else
-	gicd->GICD_CTLR = flags;
+    gicd->GICD_CTLR = flags;
 }
 
 void EnableSPI(uint32_t id)
@@ -293,17 +293,17 @@ void SetSPISecurity(uint32_t id, GICIGROUPRBits_t group)
      * either set or clear the Group bit for the interrupt as appropriate
      */
     if (group)
-	gicd->GICD_IGROUPR[bank] |= 1 << id;
+    gicd->GICD_IGROUPR[bank] |= 1 << id;
     else
-	gicd->GICD_IGROUPR[bank] &= ~(1 << id);
+    gicd->GICD_IGROUPR[bank] &= ~(1 << id);
 
     /*
      * now deal with groupmod
      */
     if (groupmod)
-	gicd->GICD_IGRPMODR[bank] |= 1 << id;
+    gicd->GICD_IGRPMODR[bank] |= 1 << id;
     else
-	gicd->GICD_IGRPMODR[bank] &= ~(1 << id);
+    gicd->GICD_IGRPMODR[bank] &= ~(1 << id);
 }
 
 void SetSPISecurityBlock(uint32_t block, GICIGROUPRBits_t group)
@@ -339,7 +339,7 @@ void SetSPISecurityAll(GICIGROUPRBits_t group)
      * SGI/PPI interrupts, and not relevant here)
      */
     for (block = (gicd->GICD_TYPER & ((1 << 5) - 1)); block > 0; --block)
-	SetSPISecurityBlock(block, group);
+    SetSPISecurityBlock(block, group);
 }
 
 /* EOF GICv3_gicd.c */

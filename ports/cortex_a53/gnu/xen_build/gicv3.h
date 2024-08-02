@@ -560,6 +560,10 @@ void SetPrivateIntSecurityBlock(uint32_t gicr, GICIGROUPRBits_t group);
 
 void setup_gic(void *dtb);
 
+void init_gicd_base(uint64_t addr);
+
+void init_gicr_base(uint64_t addr);
+
 #endif /* ndef GICV3_h */
 
 /* EOF GICv3.h */
