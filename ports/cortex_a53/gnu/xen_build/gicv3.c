@@ -2,10 +2,12 @@
 
 #include <libfdt.h>
 
+#include "v8_mmu.h"
 #include "gicv3.h"
 #include "gicv3_gicc.h"
 
-extern uint8_t __attribute__((section(".gicd"))) gicd;
+extern void __attribute__((section(".gicd"))) gicd;
+extern char __attribute__((section(".gicr"))) gicrbase[2];
 
 static void init_gic(void *device_tree)
 {
@@ -30,10 +32,10 @@ static void init_gic(void *device_tree)
                 printf("bad 'reg' property: %p %d\n", reg, len);
                 continue;
             }
-
-            mmap_dev(&gicd, fdt64_to_cpu(reg[0]));
-	    //mmap_dev(0x4020000, fdt64_to_cpu(reg[2]));
-            printf("gicd_base = %p, gicc_base = %p\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[2]));
+            
+	    mmap_dev((uint64_t) &gicd, fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]));
+            mmap_dev((uint64_t) gicrbase, fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
+	    printf("gicd_base = %lx, %lx. gicc_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
             return;
         }
     }

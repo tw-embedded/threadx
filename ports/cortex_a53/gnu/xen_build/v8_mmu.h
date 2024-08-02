@@ -125,4 +125,13 @@
 #define TT_S1_MAIR_WB_RA  0b1110
 #define TT_S1_MAIR_WB_RWA 0b1111
 
+#ifndef __ASSEMBLER__
+#include <stdint.h>
+#include <stddef.h>
+
+#define virt_to_phys(v) ((uint64_t)(v) + 0x30000000)
+
+void mmap_dev(uint64_t va, uint64_t pa, size_t size);
+#endif
+
 #endif // V8_MMU_H

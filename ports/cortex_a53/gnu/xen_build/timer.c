@@ -1,3 +1,6 @@
+#include <stdio.h>
+
+#include <libfdt.h>
 
 #include "gicv3.h"
 #include "gicv3_gicc.h"
@@ -37,9 +40,15 @@ static void ArmWriteCntvCtl(uint64_t value)
                          :"memory");
 }
 
+static uint64_t clock_frequency = 0;
+
 static uint64_t ArmReadCntFrq(void)
 {
     uint64_t value;
+
+    if (clock_frequency) {
+    	return clock_frequency;
+    }
 
     __asm__ __volatile__("mrs x0, cntfrq_el0\n\t"
                          "str x0, %0\n\t"
@@ -163,10 +172,72 @@ void fiqHandler(void)
     setICC_EOIR1(ID); // writeAliasedEOI(ID);
 }
 
+static void dump_dtb(void *fdt)
+{
+    int offset, nextoffset = 0;
+    uint32_t tag;
+    const void *prop;
+    int err;
+    int len;
+    const char *propname;
+
+    while (1) {
+        offset = nextoffset;
+        tag = fdt_next_tag(fdt, offset, &nextoffset);
+        switch (tag) {
+        case FDT_BEGIN_NODE:
+            printf("begin %s\n",fdt_get_name(fdt, offset, &len));
+            break;
+        case FDT_PROP:
+            prop = fdt_getprop_by_offset(fdt, offset, &propname, &err);
+            printf("prop %s\n",propname);
+            if (0 == strcmp(propname, "bootargs")) {
+                printf("bootargs: %s\n", fdt_getprop(fdt, offset, "bootargs", &len));
+            }
+            break;
+	case FDT_END:
+	    return;
+	    break;
+        default:
+            break;
+        }
+    }
+}
+
+static void setup_clock_freq(void *device_tree)
+{
+    int node = 0;
+    int depth = 0;
+    int len;
+    const uint64_t *tmp;
+    char *name;
+
+    for (;;) {
+        node = fdt_next_node(device_tree, node, &depth);
+        if (node <= 0 || depth < 0)
+            break;
+	
+	if (fdt_node_check_compatible(device_tree, node, "arm,armv8-timer")) {
+	    printf("timer found\n");
+	    printf("reg freq %lx\n", ArmReadCntFrq());
+	    tmp = fdt_getprop(device_tree, node, "clock-frequency", NULL);
+	    if (NULL != tmp) {
+	        clock_frequency = fdt64_to_cpu(*tmp);
+	        printf("new freq %lx\n", clock_frequency);
+	    }
+	    return;
+	}
+    }
+}
+
 // Initialize Timer 0 and Interrupt Controller
 void init_timer(void *dtb)
 {
+    dump_dtb(dtb);
+
     setup_gic(dtb);
+
+    setup_clock_freq(dtb);
 
     // Enable the specific interrupt ID for the virtual timer 
     EnableSPI(VIRTUAL_TIMER_IRQ);

@@ -36,6 +36,7 @@ target_sources(${APP_NAME} PRIVATE
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/main.c
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/gicv3_gicd.c
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/gicv3_gicr.c
+	${CMAKE_CURRENT_LIST_DIR}/xen_build/gicv3.c
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/timer.c
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/putc.c
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/mp_mutexes.s

@@ -104,7 +104,7 @@ typedef struct
  * to avoid unwanted compiler optimisations when calculating the
  * base of a particular Redistributor bank
  */
-static const GICv3_GICR gicrbase[2] __attribute__((section (".gicr")));
+const GICv3_GICR gicrbase[2] __attribute__((section (".gicr")));
 
 /**********************************************************************/
 

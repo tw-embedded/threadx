@@ -228,6 +228,13 @@ SECTIONS
         . = . + 0x1000;
     }
 
+    .ttb0_l3_periph_tabs (NOLOAD):
+    {
+        . = ALIGN(4096);
+        __ttb0_l3_periph_tabs = .;
+        . = . + 0x10000;
+    }
+
     /*
      * The startup code uses the end of this region to calculate
      * the top of memory - don't place any RAM regions after it
