@@ -2,8 +2,8 @@
 
 #include "v8_mmu.h"
 
-extern uint8_t __ttb0_l1;
-extern uint8_t __ttb0_l2_periph;
+extern char __ttb0_l1;
+extern char __ttb0_l2_periph;
 
 #define PERI_TABS_SIZE 0x10
 
@@ -76,24 +76,24 @@ void mmap_dev_l3(uint64_t va, uint64_t pa, size_t size)
 
 void mmap_dev(uint64_t va, uint64_t pa, size_t size)
 {
-    uint64_t *tab1 = &__ttb0_l1;
-    uint64_t *tab2 = &__ttb0_l2_periph;
+    uint64_t *tab1 = (uint64_t *) &__ttb0_l1;
+    uint64_t *tab2 = (uint64_t *) &__ttb0_l2_periph;
 
     // check item of table level 1
     if (0 == *(tab1 + ((va >> 30) & 0xf))) {
-    // level 2
-    update_l2_item(tab2, va, pa);
+        // level 2
+        update_l2_item(tab2, va, pa);
         __asm__ __volatile__("dsb ish");
 
-    // level 1
+        // level 1
         *(tab1 + ((va >> 30) & 0xf)) = (uint64_t) virt_to_phys(tab2) | TT_S1_ATTR_TABLE;
         __asm__ __volatile__("dsb ish");
     } else {
-    // level 2, notice tab2 is get from tab1, so tab2 is physical address
-    tab2 = *(tab1 + ((va >> 30) & 0xf)) & (~0xfff);
-    // we could access physcial address beacause of shadow map
-    update_l2_item(tab2, va, pa);
-    __asm__ __volatile__("dsb ish");
+        // level 2, notice tab2 is get from tab1, so tab2 is physical address
+        tab2 = (uint64_t *)(*(tab1 + ((va >> 30) & 0xf)) & (~0xfff));
+        // we could access physcial address beacause of shadow map
+        update_l2_item(tab2, va, pa);
+        __asm__ __volatile__("dsb ish");
     }
 
     // flush tlb
