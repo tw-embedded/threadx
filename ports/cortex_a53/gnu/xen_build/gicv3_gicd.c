@@ -1,5 +1,5 @@
 /*
- * GICv3_gicd.c - generic driver code for GICv3 distributor
+ * GICv3_gicd->c - generic driver code for GICv3 distributor
  *
  * Copyright (c) 2014-2017 Arm Limited (or its affiliates). All rights reserved.
  * Use, modification and redistribution of this file is subject to your possession of a
@@ -7,6 +7,7 @@
  * and your compliance with all applicable terms and conditions of such licence agreement.
  */
 #include <stdint.h>
+#include <stdio.h>
 
 #include "gicv3.h"
 
@@ -70,21 +71,26 @@ typedef struct
 /*
  * use the scatter file to place GICD
  */
-GICv3_distributor __attribute__((section(".gicd"))) gicd;
+static GICv3_distributor *gicd = NULL;
+
+void init_gicd_base(uint64_t addr)
+{
+    gicd = (GICv3_distributor *) addr;
+}
 
 void ConfigGICD(GICDCTLRFlags_t flags)
 {
-    gicd.GICD_CTLR = flags;
+    gicd->GICD_CTLR = flags;
 }
 
 void EnableGICD(GICDCTLRFlags_t flags)
 {
-    gicd.GICD_CTLR |= flags;
+    gicd->GICD_CTLR |= flags;
 }
 
 void DisableGICD(GICDCTLRFlags_t flags)
 {
-    gicd.GICD_CTLR &= ~flags;
+    gicd->GICD_CTLR &= ~flags;
 }
 
 void SyncAREinGICD(GICDCTLRFlags_t flags, uint32_t dosync)
@@ -94,11 +100,11 @@ void SyncAREinGICD(GICDCTLRFlags_t flags, uint32_t dosync)
 	const uint32_t tmask = gicdctlr_ARE_S | gicdctlr_ARE_NS;
 	const uint32_t tval = flags & tmask;
 
-	while ((gicd.GICD_CTLR & tmask) != tval)
+	while ((gicd->GICD_CTLR & tmask) != tval)
 	    continue;
     }
     else
-	gicd.GICD_CTLR = flags;
+	gicd->GICD_CTLR = flags;
 }
 
 void EnableSPI(uint32_t id)
@@ -108,10 +114,10 @@ void EnableSPI(uint32_t id)
     /*
      * GICD_ISENABLER has 32 interrupts per register
      */
-    bank = (id >> 5) & RANGE_LIMIT(gicd.GICD_ISENABLER);
+    bank = (id >> 5) & RANGE_LIMIT(gicd->GICD_ISENABLER);
     id &= 32 - 1;
 
-    gicd.GICD_ISENABLER[bank] = 1 << id;
+    gicd->GICD_ISENABLER[bank] = 1 << id;
 
     return;
 }
@@ -123,10 +129,10 @@ void DisableSPI(uint32_t id)
     /*
      * GICD_ISENABLER has 32 interrupts per register
      */
-    bank = (id >> 5) & RANGE_LIMIT(gicd.GICD_ICENABLER);
+    bank = (id >> 5) & RANGE_LIMIT(gicd->GICD_ICENABLER);
     id &= 32 - 1;
 
-    gicd.GICD_ICENABLER[bank] = 1 << id;
+    gicd->GICD_ICENABLER[bank] = 1 << id;
 
     return;
 }
@@ -138,9 +144,9 @@ void SetSPIPriority(uint32_t id, uint32_t priority)
     /*
      * GICD_IPRIORITYR has one byte-wide entry per interrupt
      */
-    bank = id & RANGE_LIMIT(gicd.GICD_IPRIORITYR);
+    bank = id & RANGE_LIMIT(gicd->GICD_IPRIORITYR);
 
-    gicd.GICD_IPRIORITYR[bank] = priority;
+    gicd->GICD_IPRIORITYR[bank] = priority;
 }
 
 uint32_t GetSPIPriority(uint32_t id)
@@ -150,9 +156,9 @@ uint32_t GetSPIPriority(uint32_t id)
     /*
      * GICD_IPRIORITYR has one byte-wide entry per interrupt
      */
-    bank = id & RANGE_LIMIT(gicd.GICD_IPRIORITYR);
+    bank = id & RANGE_LIMIT(gicd->GICD_IPRIORITYR);
 
-    return (uint32_t)(gicd.GICD_IPRIORITYR[bank]);
+    return (uint32_t)(gicd->GICD_IPRIORITYR[bank]);
 }
 
 void SetSPIRoute(uint32_t id, uint64_t affinity, GICDIROUTERBits_t mode)
@@ -162,9 +168,9 @@ void SetSPIRoute(uint32_t id, uint64_t affinity, GICDIROUTERBits_t mode)
     /*
      * GICD_IROUTER has one doubleword-wide entry per interrupt
      */
-    bank = id & RANGE_LIMIT(gicd.GICD_IROUTER);
+    bank = id & RANGE_LIMIT(gicd->GICD_IROUTER);
 
-    gicd.GICD_IROUTER[bank] = affinity | (uint64_t)mode;
+    gicd->GICD_IROUTER[bank] = affinity | (uint64_t)mode;
 }
 
 uint64_t GetSPIRoute(uint32_t id)
@@ -174,9 +180,9 @@ uint64_t GetSPIRoute(uint32_t id)
     /*
      * GICD_IROUTER has one doubleword-wide entry per interrupt
      */
-    bank = id & RANGE_LIMIT(gicd.GICD_IROUTER);
+    bank = id & RANGE_LIMIT(gicd->GICD_IROUTER);
 
-    return gicd.GICD_IROUTER[bank];
+    return gicd->GICD_IROUTER[bank];
 }
 
 void SetSPITarget(uint32_t id, uint32_t target)
@@ -186,9 +192,9 @@ void SetSPITarget(uint32_t id, uint32_t target)
     /*
      * GICD_ITARGETSR has one byte-wide entry per interrupt
      */
-    bank = id & RANGE_LIMIT(gicd.GICD_ITARGETSR);
+    bank = id & RANGE_LIMIT(gicd->GICD_ITARGETSR);
 
-    gicd.GICD_ITARGETSR[bank] = target;
+    gicd->GICD_ITARGETSR[bank] = target;
 }
 
 uint32_t GetSPITarget(uint32_t id)
@@ -202,9 +208,9 @@ uint32_t GetSPITarget(uint32_t id)
      * GICD_ITARGETSR has 4 interrupts per register, i.e. 8-bits of
      * target bitmap per register
      */
-    bank = id & RANGE_LIMIT(gicd.GICD_ITARGETSR);
+    bank = id & RANGE_LIMIT(gicd->GICD_ITARGETSR);
 
-    return (uint32_t)(gicd.GICD_ITARGETSR[bank]);
+    return (uint32_t)(gicd->GICD_ITARGETSR[bank]);
 }
 
 void ConfigureSPI(uint32_t id, GICDICFGRBits_t config)
@@ -215,15 +221,15 @@ void ConfigureSPI(uint32_t id, GICDICFGRBits_t config)
      * GICD_ICFGR has 16 interrupts per register, i.e. 2-bits of
      * configuration per register
      */
-    bank = (id >> 4) & RANGE_LIMIT(gicd.GICD_ICFGR);
+    bank = (id >> 4) & RANGE_LIMIT(gicd->GICD_ICFGR);
     config &= 3;
 
     id = (id & 0xf) << 1;
 
-    tmp = gicd.GICD_ICFGR[bank];
+    tmp = gicd->GICD_ICFGR[bank];
     tmp &= ~(3 << id);
     tmp |= config << id;
-    gicd.GICD_ICFGR[bank] = tmp;
+    gicd->GICD_ICFGR[bank] = tmp;
 }
 
 void SetSPIPending(uint32_t id)
@@ -233,10 +239,10 @@ void SetSPIPending(uint32_t id)
     /*
      * GICD_ISPENDR has 32 interrupts per register
      */
-    bank = (id >> 5) & RANGE_LIMIT(gicd.GICD_ISPENDR);
+    bank = (id >> 5) & RANGE_LIMIT(gicd->GICD_ISPENDR);
     id &= 0x1f;
 
-    gicd.GICD_ISPENDR[bank] = 1 << id;
+    gicd->GICD_ISPENDR[bank] = 1 << id;
 }
 
 void ClearSPIPending(uint32_t id)
@@ -246,10 +252,10 @@ void ClearSPIPending(uint32_t id)
     /*
      * GICD_ICPENDR has 32 interrupts per register
      */
-    bank = (id >> 5) & RANGE_LIMIT(gicd.GICD_ICPENDR);
+    bank = (id >> 5) & RANGE_LIMIT(gicd->GICD_ICPENDR);
     id &= 0x1f;
 
-    gicd.GICD_ICPENDR[bank] = 1 << id;
+    gicd->GICD_ICPENDR[bank] = 1 << id;
 }
 
 uint32_t GetSPIPending(uint32_t id)
@@ -259,10 +265,10 @@ uint32_t GetSPIPending(uint32_t id)
     /*
      * GICD_ICPENDR has 32 interrupts per register
      */
-    bank = (id >> 5) & RANGE_LIMIT(gicd.GICD_ICPENDR);
+    bank = (id >> 5) & RANGE_LIMIT(gicd->GICD_ICPENDR);
     id &= 0x1f;
 
-    return (gicd.GICD_ICPENDR[bank] >> id) & 1;
+    return (gicd->GICD_ICPENDR[bank] >> id) & 1;
 }
 
 void SetSPISecurity(uint32_t id, GICIGROUPRBits_t group)
@@ -272,7 +278,7 @@ void SetSPISecurity(uint32_t id, GICIGROUPRBits_t group)
     /*
      * GICD_IGROUPR has 32 interrupts per register
      */
-    bank = (id >> 5) & RANGE_LIMIT(gicd.GICD_IGROUPR);
+    bank = (id >> 5) & RANGE_LIMIT(gicd->GICD_IGROUPR);
     id &= 0x1f;
 
     /*
@@ -287,17 +293,17 @@ void SetSPISecurity(uint32_t id, GICIGROUPRBits_t group)
      * either set or clear the Group bit for the interrupt as appropriate
      */
     if (group)
-	gicd.GICD_IGROUPR[bank] |= 1 << id;
+	gicd->GICD_IGROUPR[bank] |= 1 << id;
     else
-	gicd.GICD_IGROUPR[bank] &= ~(1 << id);
+	gicd->GICD_IGROUPR[bank] &= ~(1 << id);
 
     /*
      * now deal with groupmod
      */
     if (groupmod)
-	gicd.GICD_IGRPMODR[bank] |= 1 << id;
+	gicd->GICD_IGRPMODR[bank] |= 1 << id;
     else
-	gicd.GICD_IGRPMODR[bank] &= ~(1 << id);
+	gicd->GICD_IGRPMODR[bank] &= ~(1 << id);
 }
 
 void SetSPISecurityBlock(uint32_t block, GICIGROUPRBits_t group)
@@ -308,7 +314,7 @@ void SetSPISecurityBlock(uint32_t block, GICIGROUPRBits_t group)
     /*
      * GICD_IGROUPR has 32 interrupts per register
      */
-    block &= RANGE_LIMIT(gicd.GICD_IGROUPR);
+    block &= RANGE_LIMIT(gicd->GICD_IGROUPR);
 
     /*
      * get each bit of group config duplicated over all 32-bits in a word
@@ -319,8 +325,8 @@ void SetSPISecurityBlock(uint32_t block, GICIGROUPRBits_t group)
     /*
      * set the security state for this block of SPIs
      */
-    gicd.GICD_IGROUPR[block] = group;
-    gicd.GICD_IGRPMODR[block] = groupmod;
+    gicd->GICD_IGROUPR[block] = group;
+    gicd->GICD_IGRPMODR[block] = groupmod;
 }
 
 void SetSPISecurityAll(GICIGROUPRBits_t group)
@@ -332,8 +338,9 @@ void SetSPISecurityAll(GICIGROUPRBits_t group)
      * want to iterate over all blocks excluding 0 (which are the
      * SGI/PPI interrupts, and not relevant here)
      */
-    for (block = (gicd.GICD_TYPER & ((1 << 5) - 1)); block > 0; --block)
+    for (block = (gicd->GICD_TYPER & ((1 << 5) - 1)); block > 0; --block)
 	SetSPISecurityBlock(block, group);
 }
 
 /* EOF GICv3_gicd.c */
+

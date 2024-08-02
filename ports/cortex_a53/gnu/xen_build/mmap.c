@@ -4,7 +4,6 @@
 
 extern uint8_t __ttb0_l1;
 extern uint8_t __ttb0_l2_periph;
-extern uint8_t __ttb0_l3_periph_tabs;
 
 #define PERI_TABS_SIZE 0x10
 
@@ -32,9 +31,8 @@ extern uint8_t __ttb0_l3_periph_tabs;
 
 #define get_l2_item(t, va) *((uint64_t *)(t) + (((va) >> 21) & 0x1ff))
 
-static uint8_t l3_used_flag[PERI_TABS_SIZE] = { 0 };
-
-void mmap_dev(uint64_t va, uint64_t pa, size_t size)
+#if 0
+void mmap_dev_l3(uint64_t va, uint64_t pa, size_t size)
 {
     uint64_t *tab1 = &__ttb0_l1;
     uint64_t *tab2 = &__ttb0_l2_periph;
@@ -56,8 +54,8 @@ void mmap_dev(uint64_t va, uint64_t pa, size_t size)
 	if (0 == get_l2_item(tab2, va)) {
             memset(tab3, 0, TAB_SIZE);printf("clear tab3\n");
 	}
-if (size > 0x100000) size = 0x100000;
-        // level 3
+        
+	// level 3
 	printf("sttart add %lx, %lx\n", va, pa);
 	for (i = 0; i < size; i += PAGE_4K) {
 	    update_l3_item(tab3, va + i, pa + i);
@@ -68,6 +66,33 @@ if (size > 0x100000) size = 0x100000;
 	tab2 = *(tab1 + ((va >> 30) & 0xf)) & (~0xfff);
 	// we could access physcial address beacause of shadow map
 	update_l2_table(tab2, va, tab3);
+	__asm__ __volatile__("dsb ish");
+    }
+
+    // flush tlb
+    __asm__ __volatile__("tlbi VMALLE1");
+}
+#endif
+
+void mmap_dev(uint64_t va, uint64_t pa, size_t size)
+{
+    uint64_t *tab1 = &__ttb0_l1;
+    uint64_t *tab2 = &__ttb0_l2_periph;
+
+    // check item of table level 1
+    if (0 == *(tab1 + ((va >> 30) & 0xf))) {
+	// level 2
+	update_l2_item(tab2, va, pa);
+        __asm__ __volatile__("dsb ish");
+
+	// level 1
+        *(tab1 + ((va >> 30) & 0xf)) = (uint64_t) virt_to_phys(tab2) | TT_S1_ATTR_TABLE;
+        __asm__ __volatile__("dsb ish");
+    } else {
+	// level 2, notice tab2 is get from tab1, so tab2 is physical address
+	tab2 = *(tab1 + ((va >> 30) & 0xf)) & (~0xfff);
+	// we could access physcial address beacause of shadow map
+	update_l2_item(tab2, va, pa);
 	__asm__ __volatile__("dsb ish");
     }
 

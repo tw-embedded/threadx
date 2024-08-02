@@ -196,6 +196,7 @@ static void dump_dtb(void *fdt)
             }
             break;
 	case FDT_END:
+	    printf("dump end\n");
 	    return;
 	    break;
         default:

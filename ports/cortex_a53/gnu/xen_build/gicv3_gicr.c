@@ -6,6 +6,9 @@
  * valid End User License Agreement for the Arm Product of which these examples are part of
  * and your compliance with all applicable terms and conditions of such licence agreement.
  */
+
+#include <stdio.h>
+
 #include "gicv3.h"
 
 /*
@@ -104,7 +107,12 @@ typedef struct
  * to avoid unwanted compiler optimisations when calculating the
  * base of a particular Redistributor bank
  */
-const GICv3_GICR gicrbase[2] __attribute__((section (".gicr")));
+static const GICv3_GICR *gicrbase = NULL;
+
+void init_gicr_base(uint64_t addr)
+{
+    gicrbase = (GICv3_GICR *) addr;
+}
 
 /**********************************************************************/
 

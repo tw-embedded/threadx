@@ -6,11 +6,14 @@
 #include "gicv3.h"
 #include "gicv3_gicc.h"
 
-extern void __attribute__((section(".gicd"))) gicd;
-extern char __attribute__((section(".gicr"))) gicrbase[2];
+extern uint8_t __cs3_peripherals;
+
+static uint64_t gicd_offset = 0;
+static uint64_t gicr_offset = 0;
 
 static void init_gic(void *device_tree)
 {
+    uint64_t addr;
     int node = 0;
     int depth = 0;
 
@@ -32,10 +35,18 @@ static void init_gic(void *device_tree)
                 printf("bad 'reg' property: %p %d\n", reg, len);
                 continue;
             }
-            
-	    mmap_dev((uint64_t) &gicd, fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]));
-            mmap_dev((uint64_t) gicrbase, fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
-	    printf("gicd_base = %lx, %lx. gicc_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
+
+#define MASK_2M (2*1024*1024 - 1)
+
+	    addr = fdt64_to_cpu(reg[0]);
+	    gicd_offset = addr & MASK_2M;
+	    mmap_dev(&__cs3_peripherals + gicd_offset, addr, fdt64_to_cpu(reg[1]));
+
+	    addr = fdt64_to_cpu(reg[2]);
+            gicr_offset = addr & MASK_2M;
+            mmap_dev(&__cs3_peripherals + gicr_offset, addr, fdt64_to_cpu(reg[3]));
+
+	    printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
             return;
         }
     }
@@ -47,6 +58,10 @@ void setup_gic(void *dtb)
 {
     // get pa from dtb
     init_gic(dtb);
+
+    printf("gicd %lx, gicr %lx\n", &__cs3_peripherals + gicd_offset, &__cs3_peripherals + gicr_offset);
+    init_gicd_base(&__cs3_peripherals + gicd_offset);
+    init_gicr_base(&__cs3_peripherals + gicr_offset);
 
     // Enable system register access to GIC
     uint64_t sre = getICC_SRE_EL1();

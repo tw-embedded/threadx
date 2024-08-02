@@ -620,7 +620,7 @@ loop1:
     //
     // x25 = L1 table offset
     //
-    ldr x4, =gicd
+    //ldr x4, =gicd
     ubfx x25, x4, #30, #2
 
     //

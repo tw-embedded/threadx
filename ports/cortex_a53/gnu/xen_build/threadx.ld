@@ -14,24 +14,7 @@ SECTIONS
      * This region is not truly empty, but we have no
      * predefined objects that live within it
      */
-    __cs3_peripherals  = 0x1c000000;
-
-    /*
-     * GICv3 distributor
-     */
-    .gicd 0x4001000 (NOLOAD): /* 2M block, so offset is important */
-    {
-        *(.gicd)
-    }
-
-    /*
-     * GICv3 redistributors
-     * 128KB for each redistributor in the system
-     */
-    .gicr 0x4020000 (NOLOAD): /* 2M block, so offset is important */
-    {
-        *(.gicr)
-    }
+    __cs3_peripherals  = 0x4000000;
 
     .dtb 0x8000000 (NOLOAD) : {
         dtb = .;
@@ -226,13 +209,6 @@ SECTIONS
         . = ALIGN(4096);
         __ttb0_l2_periph = .;
         . = . + 0x1000;
-    }
-
-    .ttb0_l3_periph_tabs (NOLOAD):
-    {
-        . = ALIGN(4096);
-        __ttb0_l3_periph_tabs = .;
-        . = . + 0x10000;
     }
 
     /*
