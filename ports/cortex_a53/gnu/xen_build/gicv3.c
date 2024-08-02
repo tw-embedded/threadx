@@ -11,6 +11,39 @@ extern uint8_t __cs3_peripherals;
 static uint64_t gicd_offset = 0;
 static uint64_t gicr_offset = 0;
 
+static void dump_dtb(void *fdt)
+{
+    int offset, nextoffset = 0;
+    uint32_t tag;
+    const void *prop;
+    int err;
+    int len;
+    const char *propname;
+
+    while (1) {
+        offset = nextoffset;
+        tag = fdt_next_tag(fdt, offset, &nextoffset);
+        switch (tag) {
+        case FDT_BEGIN_NODE:
+            printf("begin %s\n",fdt_get_name(fdt, offset, &len));
+            break;
+        case FDT_PROP:
+            prop = fdt_getprop_by_offset(fdt, offset, &propname, &err);
+            printf("prop %s\n",propname);
+            if (0 == strcmp(propname, "bootargs")) {
+                printf("bootargs: %s\n", fdt_getprop(fdt, offset, "bootargs", &len));
+            }
+            break;
+    case FDT_END:
+        printf("dump end\n");
+        return;
+        break;
+        default:
+            break;
+        }
+    }
+}
+
 static void init_gic(void *device_tree)
 {
     uint64_t addr;
@@ -38,15 +71,15 @@ static void init_gic(void *device_tree)
 
 #define MASK_2M (2*1024*1024 - 1)
 
-	    addr = fdt64_to_cpu(reg[0]);
-	    gicd_offset = addr & MASK_2M;
-	    mmap_dev(&__cs3_peripherals + gicd_offset, addr, fdt64_to_cpu(reg[1]));
+        addr = fdt64_to_cpu(reg[0]);
+        gicd_offset = addr & MASK_2M;
+        mmap_dev(&__cs3_peripherals + gicd_offset, addr, fdt64_to_cpu(reg[1]));
 
-	    addr = fdt64_to_cpu(reg[2]);
+        addr = fdt64_to_cpu(reg[2]);
             gicr_offset = addr & MASK_2M;
             mmap_dev(&__cs3_peripherals + gicr_offset, addr, fdt64_to_cpu(reg[3]));
 
-	    printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
+        printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
             return;
         }
     }
@@ -56,6 +89,8 @@ static void init_gic(void *device_tree)
 
 void setup_gic(void *dtb)
 {
+    dump_dtb(dtb);
+
     // get pa from dtb
     init_gic(dtb);
 
@@ -74,7 +109,7 @@ void setup_gic(void *dtb)
     // Enable Group 1 interrupts
     setICC_CTLR_EL1(ctlrCBPR_EL1S);
     setICC_IGRPEN1_EL1(igrpEnable);
-    
+
     // Wake up the redistributor
     WakeupGICR(GICR_INDEX);
 
