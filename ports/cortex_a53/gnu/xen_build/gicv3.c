@@ -6,7 +6,7 @@
 #include "gicv3.h"
 #include "gicv3_gicc.h"
 
-extern uint8_t __cs3_peripherals;
+extern uint8_t peripherals_mmio_base;
 
 static uint64_t gicd_offset = 0;
 static uint64_t gicr_offset = 0;
@@ -34,10 +34,10 @@ static void dump_dtb(void *fdt)
                 printf("bootargs: %s\n", (char *) fdt_getprop(fdt, offset, "bootargs", &len));
             }
             break;
-    case FDT_END:
-        printf("dump end\n");
-        return;
-        break;
+        case FDT_END:
+            printf("dump end\n");
+            return;
+            break;
         default:
             break;
         }
@@ -73,11 +73,11 @@ static void init_gic(void *device_tree)
 
         addr = fdt64_to_cpu(reg[0]);
         gicd_offset = addr & MASK_2M;
-        mmap_dev((uint64_t) &__cs3_peripherals + gicd_offset, addr, fdt64_to_cpu(reg[1]));
+        mmap_dev((uint64_t) &peripherals_mmio_base + gicd_offset, addr, fdt64_to_cpu(reg[1]));
 
         addr = fdt64_to_cpu(reg[2]);
         gicr_offset = addr & MASK_2M;
-        mmap_dev((uint64_t) &__cs3_peripherals + gicr_offset, addr, fdt64_to_cpu(reg[3]));
+        mmap_dev((uint64_t) &peripherals_mmio_base + gicr_offset, addr, fdt64_to_cpu(reg[3]));
 
         printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
             return;
@@ -94,9 +94,9 @@ void setup_gic(void *dtb)
     // get pa from dtb
     init_gic(dtb);
 
-    printf("gicd %p, gicr %p\n", &__cs3_peripherals + gicd_offset, &__cs3_peripherals + gicr_offset);
-    init_gicd_base((uint64_t) &__cs3_peripherals + gicd_offset);
-    init_gicr_base((uint64_t) &__cs3_peripherals + gicr_offset);
+    printf("gicd %p, gicr %p\n", &peripherals_mmio_base + gicd_offset, &peripherals_mmio_base + gicr_offset);
+    init_gicd_base((uint64_t) &peripherals_mmio_base + gicd_offset);
+    init_gicr_base((uint64_t) &peripherals_mmio_base + gicr_offset);
 
     // Enable system register access to GIC
     uint64_t sre = getICC_SRE_EL1();

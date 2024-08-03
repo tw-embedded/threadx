@@ -50,7 +50,7 @@
     .global dtb
     .global __stack
     .global __el3_stack
-    .global __cs3_peripherals
+    .global peripherals_mmio_base
 
 // ------------------------------------------------------------
 
@@ -346,7 +346,7 @@ el1_entry_aarch64:
     //
     // Cortex-A processors automatically invalidate their caches on reset
     // (unless suppressed with the DBGL1RSTDISABLE or L2RSTDISABLE pins).
-    // It is therefore not necessary for software to invalidate the caches 
+    // It is therefore not necessary for software to invalidate the caches
     // on startup, however, this is done here in case of a warm reset.
     // bl  InvalidateUDCaches // alix: when xen boot domu, cache was invalidated
     tlbi VMALLE1
@@ -567,7 +567,7 @@ loop1:
     mov x1, #(512 << 3)
     mov x0, x22
     bl ZeroBlock
-    ldr x4, =dtb // this is virtual address 
+    ldr x4, =dtb // this is virtual address
     ubfx x23, x4, #30, #2
     ubfx x24, x4, #21, #9
     // update level 1 table
@@ -691,7 +691,7 @@ nol2setup:
     // Get CS3_PERIPHERALS address into x4 and calculate the offset into the
     // L2 tables
     //
-    ldr x4, =__cs3_peripherals
+    ldr x4, =peripherals_mmio_base
     ubfx x2, x4, #21, #9
 
     //
@@ -795,7 +795,7 @@ argv:
 arg0:
     .byte 0
     .popsection
-    
+
     ldr x0, =argv
     add x0, x0, #8
     str x28, [x0]

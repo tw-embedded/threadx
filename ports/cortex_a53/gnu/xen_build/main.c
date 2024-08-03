@@ -92,9 +92,10 @@ int main(int argc, char *argv[])
         printf("valid DTB pointer\n");
     }
 
+    /* initialize interrupt controller */
     setup_gic(device_tree);
 
-    /* Initialize timer.  */
+    /* initialize timer.  */
     init_timer(device_tree);
 
     /* Enter ThreadX.  */

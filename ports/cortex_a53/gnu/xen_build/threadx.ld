@@ -4,17 +4,8 @@ ENTRY(_threadxen_start)
 
 SECTIONS
 {
-    /* CS3 Peripherals is a 64MB region from 0x1c000000
-     * that includes the following:
-     * System Registers             at 0x1C010000
-     * UART0 (PL011)                at 0x1C090000
-     * Color LCD Controller (PL111) at 0x1C1F0000
-     * plus a number of others.
-     * CS3_PERIPHERALS is used by the startup code for page-table generation
-     * This region is not truly empty, but we have no
-     * predefined objects that live within it
-     */
-    __cs3_peripherals  = 0x4000000;
+    /* peripheral base, which is isolated from ram and aligned to 2M */
+    peripherals_mmio_base = 0x4000000;
 
     .dtb 0x8000000 (NOLOAD) : {
         dtb = .;
