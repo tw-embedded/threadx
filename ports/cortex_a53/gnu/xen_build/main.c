@@ -74,6 +74,7 @@ UCHAR   event_buffer[65536];
 #include "gicv3.h"
 #include <libfdt.h>
 #define CONSOLEIO_write 0
+void HYPERVISOR_console_io(int no, size_t size, uint8_t *str);
 
 /* Define main entry point.  */
 

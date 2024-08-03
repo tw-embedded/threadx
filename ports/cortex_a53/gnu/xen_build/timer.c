@@ -185,36 +185,24 @@ static void setup_clock_freq(void *device_tree)
         if (node <= 0 || depth < 0)
             break;
 
-    if (fdt_node_check_compatible(device_tree, node, "arm,armv8-timer")) {
-        printf("timer found\n");
-        printf("reg freq %lx\n", ArmReadCntFrq());
-        tmp = fdt_getprop(device_tree, node, "clock-frequency", NULL);
-        if (NULL != tmp) {
-            clock_frequency = fdt64_to_cpu(*tmp);
-            printf("new freq %lx\n", clock_frequency);
+        if (fdt_node_check_compatible(device_tree, node, "arm,armv8-timer")) {
+            printf("timer found\n");
+            printf("reg freq %lx\n", ArmReadCntFrq());
+            tmp = fdt_getprop(device_tree, node, "clock-frequency", NULL);
+            if (NULL != tmp) {
+                clock_frequency = fdt64_to_cpu(*tmp);
+                printf("new freq %lx\n", clock_frequency);
+            }
+            return;
         }
-        return;
-    }
     }
 }
 
-// Initialize Timer 0 and Interrupt Controller
-void init_timer(void *dtb)
+static void wait_timer_interrupt_test(void)
 {
-    setup_clock_freq(dtb);
+    uint32_t intid, iar;
 
-    // Enable the specific interrupt ID for the virtual timer
-    EnableSPI(VIRTUAL_TIMER_IRQ);
-    EnablePrivateInt(GICR_INDEX, VIRTUAL_TIMER_IRQ);
-
-    configure_vtimer(TICK);
-
-    __asm__("msr daifclr, #2"); // Enable IRQs
-
-#if 0
     while (1) {
-        uint32_t intid, iar;
-
         asm volatile("wfi");
 
 #define read_sysreg(reg) ({ uint64_t val; __asm__ volatile ("mrs %0, " #reg : "=r"(val)); val; })
@@ -224,22 +212,35 @@ void init_timer(void *dtb)
 
         iar = read_sysreg(ICC_IAR1_EL1);
         intid = iar & 0xFFFFFF;
-        char buf[0x100];int n;
-        n = snprintf(buf, 100, "intid %d\n", intid);
-        HYPERVISOR_console_io(CONSOLEIO_write, n, buf);
+
+        printf("intid %d\n", intid);
         if (intid == VIRTUAL_TIMER_IRQ) {
-            HYPERVISOR_console_io(CONSOLEIO_write, 8, "xxxxxxxxxxxxxxx");
+            printf("virtual timer irq\n");
         }
 
         uint64_t ctl = read_sysreg(CNTV_CTL_EL0);
         if (ctl & 2) {
             handle_vtimer_interrupt();
-            HYPERVISOR_console_io(CONSOLEIO_write, 8, "tt-tttttt\n");
+            printf("x");
             configure_vtimer(10000000);
         } else {
-            //HYPERVISOR_console_io(CONSOLEIO_write, 1, ".\n");
+            printf(".");
         }
     }
-#endif
 }
+
+// initialize Timer 0 and Interrupt Controller
+void init_timer(void *dtb)
+{
+    setup_clock_freq(dtb);
+
+    // enable the specific interrupt ID for the virtual timer
+    EnableSPI(VIRTUAL_TIMER_IRQ);
+    EnablePrivateInt(GICR_INDEX, VIRTUAL_TIMER_IRQ);
+
+    configure_vtimer(TICK);
+
+    __asm__("msr daifclr, #2"); // enable IRQs
+}
+
 
