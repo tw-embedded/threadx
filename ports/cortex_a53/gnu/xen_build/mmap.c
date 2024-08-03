@@ -31,7 +31,7 @@ extern char __ttb0_l2_periph;
 
 #define get_l2_item(t, va) *((uint64_t *)(t) + (((va) >> 21) & 0x1ff))
 
-#define get_l1_item(t, va) *((uint64_t *)(t) + (((va) >> 30) & 0xf)
+#define get_l1_item(t, va) *((uint64_t *)(t) + (((va) >> 30) & 0xf))
 
 #if 0
 void mmap_dev_l3(uint64_t va, uint64_t pa, size_t size)
