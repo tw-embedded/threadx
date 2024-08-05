@@ -4,9 +4,9 @@
 
 #include "gicv3.h"
 #include "gicv3_gicc.h"
+#include "config.h"
 
-// 1 tick is 1s
-#define TICK (1000)
+#define TICK (1000 / OS_HZ)
 
 // Virtual Timer interrupt ID for GIC
 #define VIRTUAL_TIMER_IRQ 27

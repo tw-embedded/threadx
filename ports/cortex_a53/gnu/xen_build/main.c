@@ -71,6 +71,7 @@ UCHAR   event_buffer[65536];
 
 #endif
 
+#include "config.h"
 #include "gicv3.h"
 #include <libfdt.h>
 #define CONSOLEIO_write 0
@@ -232,8 +233,8 @@ UINT    status;
         /* Increment the thread counter.  */
         thread_0_counter++;
 
-        /* Sleep for 10 ticks.  */
-        tx_thread_sleep(10);
+        /* Sleep for 10s.  */
+        tx_thread_sleep(MS_2_TICK(10000));
 
         /* Set event flag 0 to wakeup thread 5.  */
         status =  tx_event_flags_set(&event_flags_0, 0x1, TX_OR);
@@ -323,8 +324,8 @@ UINT    status;
         if (status != TX_SUCCESS)
             break;
 
-        /* Sleep for 2 ticks to hold the semaphore.  */
-        tx_thread_sleep(2);
+        /* Sleep for 2s to hold the semaphore.  */
+        tx_thread_sleep(MS_2_TICK(2000));
 
         /* Release the semaphore.  */
         status =  tx_semaphore_put(&semaphore_0);
