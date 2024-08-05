@@ -5,10 +5,8 @@
 #include "gicv3.h"
 #include "gicv3_gicc.h"
 
-#define SCALE 100
-
-// 1 tick is 10ms
-#define TICK (10 * SCALE)
+// 1 tick is 1s
+#define TICK (1000)
 
 // Virtual Timer interrupt ID for GIC
 #define VIRTUAL_TIMER_IRQ 27
@@ -85,7 +83,10 @@ static void configure_vtimer(uint64_t ms)
     uint64_t interval = (freq / 1000) * ms;
 
     ArmWriteCntvTval(interval);
+}
 
+static void enable_vtimer(void)
+{
     uint64_t ctl = ArmReadCntvCtl();
     ArmWriteCntvCtl(ctl | ARM_ARCH_TIMER_ENABLE); // enable
 }
@@ -93,9 +94,8 @@ static void configure_vtimer(uint64_t ms)
 static void handle_vtimer_interrupt(void)
 {
     uint64_t ctl = ArmReadCntvCtl();
-    ArmWriteCntvCtl(ctl & ~ARM_ARCH_TIMER_IMASK); // clear interrupt
-
     configure_vtimer(TICK);
+    ArmWriteCntvCtl(ctl & ~ARM_ARCH_TIMER_IMASK); // clear interrupt
 }
 
 void _tx_timer_interrupt(void);
@@ -108,7 +108,7 @@ void irqHandler(void)
 
   // Check for reserved IDs
   if ((1020 <= ID) && (ID <= 1023)) {
-      //printf("irqHandler() - Reserved INTID %d\n\n", ID);
+      printf("irqHandler() - Reserved INTID %d\n\n", ID);
       return;
   }
 
@@ -120,12 +120,12 @@ void irqHandler(void)
 
     default:
       // Unexpected ID value
-      //printf("irqHandler() - Unexpected INTID %d\n\n", ID);
+      printf("irqHandler() - Unexpected INTID %d\n\n", ID);
       break;
   }
 
-  // Write the End of Interrupt register to tell the GIC
-  // we've finished handling the interrupt
+  // write the End of Interrupt register to tell the GIC
+  // finished handling the interrupt
   setICC_EOIR1(ID); // writeAliasedEOI(ID);
 }
 
@@ -236,9 +236,11 @@ void init_timer(void *dtb)
 
     // enable the specific interrupt ID for the virtual timer
     EnableSPI(VIRTUAL_TIMER_IRQ);
-    EnablePrivateInt(GICR_INDEX, VIRTUAL_TIMER_IRQ);
+    //EnablePrivateInt(GICR_INDEX, VIRTUAL_TIMER_IRQ);
 
     configure_vtimer(TICK);
+
+    enable_vtimer();
 
     __asm__("msr daifclr, #2"); // enable IRQs
 }
