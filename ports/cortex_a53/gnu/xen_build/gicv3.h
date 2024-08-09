@@ -162,7 +162,7 @@ void DisableGICD(GICDCTLRFlags_t flags);
 void SyncAREinGICD(GICDCTLRFlags_t flags, uint32_t dosync);
 
 /*
- * EnableSPI - enable a specific shared peripheral interrupt
+ * enable_sppi - enable a specific shared peripheral interrupt or private peripheral interrupt
  *
  * Inputs:
  *
@@ -172,7 +172,7 @@ void SyncAREinGICD(GICDCTLRFlags_t flags, uint32_t dosync);
  *
  *  <nothing>
  */
-void EnableSPI(uint32_t id);
+void enable_sppi(uint32_t id);
 
 /*
  * DisableSPI - disable a specific shared peripheral interrupt

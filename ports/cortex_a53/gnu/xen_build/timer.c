@@ -235,7 +235,7 @@ void init_timer(void *dtb)
     setup_clock_freq(dtb);
 
     // enable the specific interrupt ID for the virtual timer
-    EnableSPI(VIRTUAL_TIMER_IRQ);
+    enable_sppi(VIRTUAL_TIMER_IRQ);
     //EnablePrivateInt(GICR_INDEX, VIRTUAL_TIMER_IRQ);
 
     configure_vtimer(TICK);

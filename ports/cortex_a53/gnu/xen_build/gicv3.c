@@ -71,15 +71,15 @@ static void init_gic(void *device_tree)
 
 #define MASK_2M (2*1024*1024 - 1)
 
-        addr = fdt64_to_cpu(reg[0]);
-        gicd_offset = addr & MASK_2M;
-        mmap_dev((uint64_t) &peripherals_mmio_base + gicd_offset, addr, fdt64_to_cpu(reg[1]));
+            addr = fdt64_to_cpu(reg[0]);
+            gicd_offset = addr & MASK_2M;
+            mmap_dev((uint64_t) &peripherals_mmio_base + gicd_offset, addr, fdt64_to_cpu(reg[1]));
 
-        addr = fdt64_to_cpu(reg[2]);
-        gicr_offset = addr & MASK_2M;
-        mmap_dev((uint64_t) &peripherals_mmio_base + gicr_offset, addr, fdt64_to_cpu(reg[3]));
+            addr = fdt64_to_cpu(reg[2]);
+            gicr_offset = addr & MASK_2M;
+            mmap_dev((uint64_t) &peripherals_mmio_base + gicr_offset, addr, fdt64_to_cpu(reg[3]));
 
-        printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
+            printf("gicd_base = %lx, %lx. gicr_base = %lx, %lx.\n", fdt64_to_cpu(reg[0]), fdt64_to_cpu(reg[1]), fdt64_to_cpu(reg[2]), fdt64_to_cpu(reg[3]));
             return;
         }
     }

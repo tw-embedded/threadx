@@ -107,7 +107,7 @@ void SyncAREinGICD(GICDCTLRFlags_t flags, uint32_t dosync)
     gicd->GICD_CTLR = flags;
 }
 
-void EnableSPI(uint32_t id)
+void enable_sppi(uint32_t id)
 {
     uint32_t bank;
 
