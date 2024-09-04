@@ -23,15 +23,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_compile_options(${PROJECT_NAME} PRIVATE -DEL1)
 
-set(EXE_NAME threadxen)
-set(APP_NAME ${EXE_NAME}.elf)
+set(APP_NAME threadxen)
+set(EXE_NAME ${EXE_NAME}.elf)
 set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)
-add_executable(${APP_NAME})
+add_executable(${EXE_NAME})
 message(STATUS "find libc from ${CMAKE_SOURCE_DIR}")
-target_link_libraries(${APP_NAME} ${CMAKE_SOURCE_DIR}/../dtc/libfdt/libfdt.a ${CMAKE_SOURCE_DIR}/../libc/build/libc.a)
-target_link_libraries(${APP_NAME} ${PROJECT_NAME})
-target_link_options(${APP_NAME} PRIVATE -T ${LDS})
-target_sources(${APP_NAME} PRIVATE
+target_link_libraries(${EXE_NAME} ${CMAKE_SOURCE_DIR}/../dtc/libfdt/libfdt.a ${CMAKE_SOURCE_DIR}/../libc/build/libc.a)
+target_link_libraries(${EXE_NAME} ${PROJECT_NAME})
+target_link_options(${EXE_NAME} PRIVATE -T ${LDS})
+target_sources(${EXE_NAME} PRIVATE
     # {{BEGIN_TARGET_SOURCES}}
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/main.c
 	${CMAKE_CURRENT_LIST_DIR}/xen_build/gicv3_gicd.c
@@ -50,8 +50,8 @@ target_sources(${APP_NAME} PRIVATE
     # {{END_TARGET_SOURCES}}
 )
 add_custom_command(
-    TARGET ${APP_NAME}
+    TARGET ${EXE_NAME}
     POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} ${APP_NAME} -O binary ${EXE_NAME}
+    COMMAND ${CMAKE_OBJCOPY} ${EXE_NAME} -O binary ${APP_NAME}
 )
 
