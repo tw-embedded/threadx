@@ -24,7 +24,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_compile_options(${PROJECT_NAME} PRIVATE -DEL1)
 
 set(APP_NAME threadxen)
-set(EXE_NAME ${EXE_NAME}.elf)
+set(EXE_NAME ${APP_NAME}.elf)
 set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)
 add_executable(${EXE_NAME})
 message(STATUS "find libc from ${CMAKE_SOURCE_DIR}")
