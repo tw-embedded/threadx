@@ -28,7 +28,7 @@ set(EXE_NAME ${APP_NAME}.elf)
 set(LDS ${CMAKE_CURRENT_LIST_DIR}/xen_build/threadx.ld)
 add_executable(${EXE_NAME})
 message(STATUS "find libc from ${CMAKE_SOURCE_DIR}")
-target_link_libraries(${EXE_NAME} ${CMAKE_SOURCE_DIR}/../dtc/libfdt/libfdt.a ${CMAKE_SOURCE_DIR}/../libc/build/libc.a)
+target_link_libraries(${EXE_NAME} ${CMAKE_SOURCE_DIR}/../dtc/libfdt/libfdt.a ${CMAKE_SOURCE_DIR}/../libc/build/libc.a ${CMAKE_SOURCE_DIR}/../app/rust/target/aarch64-unknown-none/debug/librust.a)
 target_link_libraries(${EXE_NAME} ${PROJECT_NAME})
 target_link_options(${EXE_NAME} PRIVATE -T ${LDS})
 target_sources(${EXE_NAME} PRIVATE

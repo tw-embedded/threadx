@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+extern void rust_main(void);
 
 /* Define what the initial system looks like.  */
 
@@ -214,6 +215,8 @@ CHAR    *pointer = TX_NULL;
 
     /* Release the block back to the pool.  */
     tx_block_release(pointer);
+
+    rust_main();
 }
 
 
