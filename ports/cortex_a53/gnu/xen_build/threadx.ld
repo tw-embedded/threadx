@@ -138,6 +138,12 @@ SECTIONS
         __bss_end__ = .;
     }
 
+    .rust_init : {
+        __rust_init_start = .;
+        KEEP(*(.rust_init*))
+        __rust_init_end = .;
+    }
+
     .heap (NOLOAD):
     {
         . = ALIGN(64);
