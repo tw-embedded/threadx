@@ -231,7 +231,7 @@ UINT    status;
     /* This thread simply sits in while-forever-sleep loop.  */
     while(1)
     {
-    printf("thread 0\n");
+    	printf("thread 0\n");
 
         /* Increment the thread counter.  */
         thread_0_counter++;
@@ -312,9 +312,7 @@ UINT    status;
        below shows, these function compete for ownership of semaphore_0.  */
     while(1)
     {
-    printf("thread 3 or 4\n");
-
-    /* Increment the thread counter.  */
+    	/* Increment the thread counter.  */
         if (thread_input == 3)
             thread_3_counter++;
         else
