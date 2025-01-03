@@ -236,8 +236,8 @@ UINT    status;
         /* Increment the thread counter.  */
         thread_0_counter++;
 
-        /* Sleep for 10s.  */
-        tx_thread_sleep(MS_2_TICK(10000));
+        /* Sleep for 100s.  */
+        tx_thread_sleep(MS_2_TICK(100000));
 
         /* Set event flag 0 to wakeup thread 5.  */
         status =  tx_event_flags_set(&event_flags_0, 0x1, TX_OR);
